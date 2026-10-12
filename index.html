@@ -361,6 +361,27 @@ label{font-size:14px;color:var(--muted);font-weight:600}
   .tbr{grid-template-columns:28px 1fr auto;grid-template-areas:"n p r" "m m m" "i i i";gap:6px 10px;padding:14px 16px}
   .tn{grid-area:n}.tp{grid-area:p}.tr{grid-area:r;justify-self:end}.tm{grid-area:m}.ti{grid-area:i}
 }
+
+/* ===== Thi thử theo đề HSK 3.0 ===== */
+.ex-tbl{width:100%;border-collapse:collapse;margin:8px 0}
+.ex-tbl th,.ex-tbl td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top;font-size:14px}
+.ex-tbl th{font-weight:600;color:var(--muted)}
+.ex-pal{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.ex-pal button{min-width:40px;min-height:40px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+.ex-pal button.done{background:var(--jade-soft);border-color:var(--jade)}
+.ex-pal button.cur{outline:2px solid var(--seal);outline-offset:1px}
+.opt.sel{border-color:var(--jade);background:var(--jade-soft)}
+.ex-em{font-size:72px;line-height:1.1;text-align:center;margin:6px 0}
+.ex-blank{display:inline-block;min-width:140px;border-bottom:2px solid var(--seal);color:var(--seal)}
+.ex-py{color:var(--jade);font-family:var(--py);font-size:18px}
+.tm.ex-low{color:var(--seal)}
+.ctx0{background:var(--bg);border-radius:10px;padding:8px 12px;margin:0 0 10px}
+.card.q textarea{width:100%;min-height:90px}
+.opt.ltr{position:relative;padding-left:46px}
+.ex-let{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--seal);font-size:18px}
+.ex-aud{background:var(--jade-soft);border-radius:10px;padding:10px 12px;margin:0 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ex-seq{margin:10px 0 6px;font-size:18px}
+.ex-ord{background:var(--bg);border-radius:10px;padding:6px 12px;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -830,13 +851,13 @@ function podBlock(l){
   return `<div class="pod"><div class="podh"><b>Podcast nghe · HSK ${l}</b> <small>${ps.length} bài · nghe trước, xem pinyin và nghĩa sau, rồi làm câu hỏi</small></div><div class="podl">${ps.map(t=>`<button class="btn" data-act="rdopen" data-id="${t.id}">${ICON} ${esc(t.t.replace(/^Podcast:\s*/,''))}</button>`).join('')}</div></div>`;
 }
 function viewMap(){
-  let h=heroHTML()+bkNotice()+goalCard();
+  let h=heroHTML()+bkNotice()+goalCard()+realCard();
   h+=`<div class="sec"><h2 class="sh">Lộ trình HSK</h2><p class="muted">HSK 4 cần khoảng 3.245 từ cộng dồn. App hiện có ${WORDS.length.toLocaleString('vi-VN')} từ, gồm cả từ mở rộng theo chủ đề.</p></div>`;
   for(const l of [1,2,3,4]){
     const ls=LESSONS.filter(x=>x.l===l),ids=ls.flatMap(x=>x.ws),k=learned(ids),pct=Math.min(100,Math.round(k/TARGET[l]*100));
     h+=`<details class="card lvl" ${l===1?'open':''}>${lvlHead(l,LVDESC[l],`${k} thuộc, ${ids.length} từ (chuẩn ${TARGET[l]})${S.passed[l]?', đã đạt':''}`,pct)}
     <div class="lvlbody">${ls.map(lessonRow).join('')}
-    ${podBlock(l)}<div class="lvlact"><button class="btn p" data-act="test" data-l="${l}">Thi thử cuối chặng HSK ${l}</button><small>12 câu, 12 phút, đạt từ 80%</small></div></div></details>`;
+    ${podBlock(l)}<div class="lvlact"><button class="btn p" data-act="test" data-l="${l}">Thi thử HSK ${l}</button>${l===4?'<button class="btn" data-act="realx">Đề thật HSK 4 (100 câu)</button>':''}<small>${examBlurb(l)}</small></div></div></details>`;
   }
   h+=`<div class="two"><section class="card"><h2>Nhập môn pinyin</h2><p class="muted">Làm quen 4 thanh điệu trước khi học từ. Nghe, chọn thanh, sai thì app giải thích ngay.</p>
   <div class="row2"><button class="btn p" data-act="tonepractice">Luyện thanh điệu</button><a class="btn" href="${COURSE_URL}" target="_blank" rel="noopener noreferrer">Khóa học video</a></div></section>${workCard()}</div>`;
@@ -1053,9 +1074,10 @@ function importBackup(txt){
   const d=o&&o.app==='hanngu-hsk'?o.S:null;
   if(!d||typeof d!=='object'||!d.ws||typeof d.ws!=='object'||Array.isArray(d.ws))return toast('Đây không phải file sao lưu của app này.');
   if(!confirm('Nhập file sẽ thay thế toàn bộ tiến độ hiện tại. Tiếp tục?'))return;
-  const keep=['ws','errs','vid','custom','streak','last','passed','voice','rate','py','log','goal','bk'],n={};
+  const keep=['ws','errs','vid','custom','streak','last','passed','voice','rate','py','log','goal','bk','exams'],n={};
   keep.forEach(k=>{if(d[k]!==undefined)n[k]=d[k]});
   n.custom=(Array.isArray(n.custom)?n.custom:[]).filter(w=>w&&w.h&&w.p&&w.m&&[1,2,3,4].includes(w.l));
+  n.exams=Array.isArray(n.exams)?n.exams.filter(x=>x&&typeof x==='object').slice(-60):[];
   n.vid=Object.fromEntries(Object.entries(n.vid||{}).filter(([k,v])=>typeof v==='string'&&/^https:\/\//i.test(v)));
   if(!n.log||typeof n.log!=='object')n.log={};
   S=Object.assign({ws:{},errs:{},vid:{},custom:[],streak:0,last:'',passed:{},voice:'',rate:0.8,py:true,log:{},goal:{c:10,q:20},bk:0},n);
@@ -1128,15 +1150,15 @@ function viewTyping(){
 
 /* ---------- Điều khiển ---------- */
 function render(){
-  const v={map:viewMap,pinyin:viewPinyin,study:viewStudy,practice:viewPractice,errors:viewErrors,add:viewAdd,read:viewRead,gram:viewGrammar,typing:viewTyping,quiz:viewQuiz}[VIEW];
+  const v={map:viewMap,pinyin:viewPinyin,study:viewStudy,practice:viewPractice,errors:viewErrors,add:viewAdd,read:viewRead,gram:viewGrammar,typing:viewTyping,quiz:viewQuiz,exam:viewExam,real:viewReal}[VIEW];
   $('#main').innerHTML=v();
-  const cur=(VIEW==='quiz'||VIEW==='typing')?'practice':VIEW;
+  const cur=(VIEW==='quiz'||VIEW==='typing')?'practice':(VIEW==='exam'||VIEW==='real')?'map':VIEW;
   document.querySelectorAll('.tabs button,.dock button[data-v]').forEach(b=>b.setAttribute('aria-current',b.dataset.v===cur?'page':'false'));
   const mb=document.querySelector('.dock [data-act="more"]');if(mb)mb.setAttribute('aria-current',['pinyin','gram','errors','add'].includes(cur)?'page':'false');
   {const n=Object.keys(S.errs).length;document.querySelectorAll('.errn').forEach(e=>{e.textContent=e.classList.contains('dot')?'':String(n);e.hidden=!n})}
   if(VIEW==='quiz'&&Q&&Q.list[Q.i]&&Q.list[Q.i].kind==='type'&&!Q.fb){const i=$('#tin');if(i)i.focus({preventScroll:true})}
 }
-function go(v){sheetOpen(false);TB=null;clearInterval(TM);stopListen();Q=null;ST=null;VEDIT=null;RESET=false;RD=null;VIEW=v;render();window.scrollTo(0,0)}
+function go(v){if(EX&&!EX.forceLeave&&['ready','between','run'].includes(EX.stage)){toast('Bạn đang làm bài thi. Bấm "Thoát bài thi" nếu muốn rời.');return}if(EX)exStop();sheetOpen(false);TB=null;clearInterval(TM);stopListen();Q=null;ST=null;VEDIT=null;RESET=false;RD=null;VIEW=v;render();window.scrollTo(0,0)}
 function startQuiz(list,o){
   if(!list.length)return toast('Chưa có đủ nội dung cho lựa chọn này.');
   list=list.map(q=>{q=Object.assign({},q,{retry:false});if(q.kind==='build')q.tokens=shuffle(q.tokens);else if(q.kind==='mc'&&!q.fixed)q.opts=shuffle(q.opts);return q});
@@ -1167,7 +1189,7 @@ function stStart(sc){
   if(!q.length)return toast('Hôm nay chưa có thẻ nào cần học.');
   ST={q,i:0,flip:false,ok:0,again:0};markActive();render();
 }
-function startTest(l){startQuiz(gen('L'+l,'mix',12),{mode:'test',title:'Thi thử HSK '+l,level:l,limit:12*60*1000,again:()=>startTest(l)})}
+function startTestOld(l){startQuiz(gen('L'+l,'mix',12),{mode:'test',title:'Thi thử HSK '+l,level:l,limit:12*60*1000,again:()=>startTest(l)})}
 function startPractice(sc,m){const t=scopeInfo(sc).t;startQuiz(gen(sc,m,10),{mode:'practice',title:t,again:()=>startPractice(sc,m)})}
 
 document.addEventListener('click',e=>{
@@ -1181,6 +1203,7 @@ document.addEventListener('click',e=>{
     case 'lpractice':startPractice(d.id,'mix');break;
     case 'tonepractice':startPractice('all','tone');break;
     case 'test':startTest(+d.l);break;
+    case 'realx':go('real');break;
     case 'vedit':VEDIT=VEDIT===d.id?null:d.id;render();break;
     case 'vsave':{const v=($('#vin').value||'').trim();if(v&&!/^https:\/\//i.test(v))return toast('Link cần bắt đầu bằng https://');if(v)S.vid[d.id]=v;else delete S.vid[d.id];VEDIT=null;save();render();break}
     case 'stStart':stStart($('#sc').value);break;
@@ -1277,6 +1300,552 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{if(TB&&/^tb\d+$/.test(e.target.id)){const r=TB.rows[+e.target.id.slice(2)];if(r&&!r.res)r.val=e.target.value}if(RD&&/^dc\d+$/.test(e.target.id)){RD.dcv=RD.dcv||{};RD.dcv[+e.target.id.slice(2)]=e.target.value}if(e.target.id==='vrate'){S.rate=+e.target.value;const r=$('#vr');if(r)r.textContent=S.rate.toFixed(1);save()}});
 if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=()=>{loadVoices();if((VIEW==='practice')||(VIEW==='read')||(VIEW==='study'&&!ST))render()}}
+const REAL={};
+REAL[1]={"code": "H41001", "L1": [{"au": "喂？我们去树林里走走吧，今天的阳光多好啊，很暖和。好吧？图书馆门口儿见？", "s": "今天天气不错。", "a": true}, {"au": "我经常在电梯里遇到她，可能她也在这座大楼里上班。但是我们从来没有说过话，只是看着很熟悉。", "s": "他们俩经常聊天。", "a": false}, {"au": "西红柿鸡蛋汤的做法很简单，一点儿也不复杂，准备几个西红柿和鸡蛋就可以了，我保证你一次就能学会。", "s": "做西红柿鸡蛋汤很简单。", "a": true}, {"au": "身高只有一米六零，他是世界上最著名的矮个子篮球运动员。他曾经说过：“篮球不只是让那些高个子打的，也是给那些喜欢它的人们打的。”", "s": "他爱打篮球。", "a": true}, {"au": "小刘已经提前完成了全年任务，我希望你们各位也都能像小刘一样，希望你们加油！好，现在让我们一起鼓掌祝贺小刘！", "s": "小刘受到了表扬。", "a": true}, {"au": "喂，是你啊，我今天去北京出差。我现在在机场，等我到了北京以后再给你打电话好吗？飞机马上就要起飞了。", "s": "他刚下飞机。", "a": false}, {"au": "虽然她俩是姐妹，性格却很不一样。姐姐非常安静，极少说话，妹妹正好相反，最喜欢和人聊天。", "s": "姐妹俩性格差不多。", "a": false}, {"au": "老王，我今晚要加班，这张票浪费了就可惜了。你去看吧，听说这次演出邀请了许多著名的演员，很精彩的。", "s": "他想给老王一张演出票。", "a": true}, {"au": "小张，你这份计划书写得不错，就按照这个计划去做市场调查吧。下个月我要看调查结果。", "s": "小张的调查结果写得很好。", "a": false}, {"au": "女儿发烧了，我带她去医院。大夫给她打了一针，三岁的女儿尽管很害怕打针，不过她没有哭。", "s": "女儿不同意打针。", "a": false}], "L2": [{"d": ["男：请问，附近有超市吗？", "女：前面那儿有个银行，银行对面有一个小超市。"], "q": "超市在哪儿？", "o": ["银行对面", "银行右边", "车站附近", "使馆西边"], "a": 0}, {"d": ["女：天都这么晚了，你还出去干什么？", "男：我们明天去上海旅游，我要去买一个轻一点儿的行李箱。"], "q": "男的现在要去做什么？", "o": ["请假", "唱歌", "散步", "买东西"], "a": 3}, {"d": ["男：怎么又买这么多饼干和巧克力，难道你不减肥了？", "女：减了一个月都没有瘦下来，我实在没有信心了。"], "q": "女的是什么意思？", "o": ["不想吃饭", "需要鼓励", "放弃减肥", "继续运动"], "a": 2}, {"d": ["女：明天几点到？八点来得及来不及？", "男：提前点儿吧？咱们还得负责打印会议材料呢。"], "q": "他们要提前做什么？", "o": ["准备礼物", "打印材料", "收拾房间", "讨论问题"], "a": 1}, {"d": ["男：李老师，我下个月五号要结婚了。", "女：你是在开玩笑吧？你们才认识一个月呀。"], "q": "对于这个消息，女的觉得怎么样？", "o": ["很感动", "很突然", "很后悔", "很失望"], "a": 1}, {"d": ["女：啊，外面下雪了。起床，你快来看看。", "男：太好了！咱们去公园吧？试试你的新照相机，怎么样？"], "q": "这个照相机怎么样？", "o": ["是新的", "刚修好", "质量不合格", "样子很流行"], "a": 0}, {"d": ["男：我已经出发了，有点儿堵车，到学校大概要四十分钟。", "女：好的，你路上小心，慢慢开，别着急。"], "q": "男的怎么去学校？", "o": ["步行", "开车", "坐地铁", "打出租车"], "a": 1}, {"d": ["女：听说你准备出国读博士？", "男：是啊，已经申请了。如果顺利的话，下个月就可以出发了。"], "q": "男的打算做什么？", "o": ["结婚", "去旅游", "出国工作", "出国读书"], "a": 3}, {"d": ["男：小姐，我女儿多少钱一张票？", "女：您好，您的六十，您孩子买儿童票，半价。"], "q": "女儿的票多少钱一张？", "o": ["20 块", "30 块", "40 块", "60 块"], "a": 1}, {"d": ["女：今晚我穿这条裙子怎么样？今年最流行的。", "男：很漂亮，不过我觉得这种打扮参加正式的舞会可能还是不太合适。"], "q": "男的是什么意思？", "o": ["太旧了", "很奇怪", "有点儿长", "最好换一件"], "a": 3}, {"d": ["男：来北方好几年了吧？你觉得北方和南方在气候上有什么区别？", "女：夏天都差不多，只是冬天北方比较干燥，而南方更湿润。"], "q": "他们在谈什么？", "o": ["气候", "文化", "风景", "职业"], "a": 0}, {"d": ["女：经理，您对新的办公室环境还满意吗？", "男：不错，谢谢。你可以带我去看看公司别的地方吗？"], "q": "说话人在哪里？", "o": ["花园", "教室", "公司", "宾馆"], "a": 2}, {"d": ["男：明天的面试很重要，你千万不要迟到。", "女：我知道，你别担心了，我一定会准时到的。"], "q": "男的希望女的怎么样？", "o": ["请客", "按时到", "别生气", "换一个航班"], "a": 1}, {"d": ["女：你对小李的印象怎么样？", "男：他的优点是有礼貌，诚实，能吃苦，就是太马虎、太粗心了，不适合我们的工作。"], "q": "小李为什么被拒绝了？", "o": ["很穷", "很粗心", "不专业", "不友好"], "a": 1}, {"d": ["男：怎么忽然想起买花了？要送谁啊？", "女：今天是父亲节，你不会忘了吧？快去买礼物吧。"], "q": "女的为什么买花？", "o": ["父亲节", "花很便宜", "妈妈生病了", "朋友过生日"], "a": 0}], "L3": [{"d": ["女：打了一下午羽毛球，肚子有点儿饿了。", "男：稍等一会儿，饭马上就好。", "女：真香，今天吃什么？", "男：你鼻子真好，今晚我们吃饺子。"], "q": "他们今晚吃什么？", "o": ["面条", "米饭", "饺子", "蛋糕"], "a": 2}, {"d": ["男：小李，刚才跟你说话的那个女孩儿是谁啊？", "女：我大学同学，你认识？", "男：应该不认识，但是好像在哪儿见过。", "女：那你可能是在我的大学毕业照上见过吧。"], "q": "那个女孩儿和小李是什么关系？", "o": ["亲戚", "同学", "师生", "同事"], "a": 1}, {"d": ["女：你好，请问王师傅在家吗？", "男：他不在家，他游泳去了。", "女：那他什么时候回来呢？", "男：一会儿就回来了吧。", "女：好的，那我过一会儿再联系吧，打扰了，再见。"], "q": "王师傅做什么去了？", "o": ["洗澡", "游泳", "爬山", "逛街"], "a": 1}, {"d": ["男：上午刚借的那本杂志，怎么找不到了？", "女：哪本杂志？", "男：体育杂志，黄皮儿的，我就放在桌子上。", "女：不用到处找了，我刚看了一下，在沙发上呢。"], "q": "男的在找什么？", "o": ["杂志", "地图", "护照", "笔记本"], "a": 0}, {"d": ["女：先生，对不起，我们这儿不能抽烟。", "男：请问，附近有可以抽烟的地方吗？", "女：有，请直走，然后向左，那儿有一个吸烟室。", "男：谢谢。"], "q": "他们最可能在哪儿？", "o": ["路上", "饭店里", "邻居家", "公共汽车上"], "a": 1}, {"d": ["男：李教授，这几篇文章您什么时候要？", "女：不急，你自己安排，只要在寒假前交给我就行。", "男：没问题，我肯定会提前完成的。", "女：那样更好。"], "q": "李教授什么时候要那几篇文章？", "o": ["中午", "周末", "月底", "寒假前"], "a": 3}, {"d": ["女：先生，这是您的房卡，请拿好。", "男：谢谢！我的行李箱在哪儿取呢？", "女：我们一会儿会直接送到您的房间。", "男：谢谢！麻烦你们了。", "女：不客气。"], "q": "女的最可能是做什么的？", "o": ["校长", "服务员", "理发师", "医院护士"], "a": 1}, {"d": ["男：你好，我想要一个窗户旁边的座位，还有吗？", "女：我查一下。对不起，您乘坐的这个航班没有窗户边的座位了。", "男：好吧，没关系。", "女：给您票。"], "q": "男的想要什么样的座位？", "o": ["很软的", "离入口近的", "宽一点儿的", "窗户旁边的"], "a": 3}, {"d": ["女：把香蕉皮扔到垃圾桶里去，以后别随便扔东西。", "男：知道了，奶奶。", "女：数学作业写完了吗？", "男：没呢，我先出去玩儿一会儿，您在家休息吧。"], "q": "根据对话，可以知道什么？", "o": ["天黑了", "西瓜不好吃", "孙子去上课", "作业没写完"], "a": 3}, {"d": ["男：你换球鞋干什么啊？又要出去啊？", "女：去打网球。我约了小王，她打网球很厉害，你敢和她打吗？", "男：当然敢。", "女：那一起去！看看你究竟是赢还是输。走吧，人多了还热闹。"], "q": "小王的网球打得怎么样？", "o": ["很不错", "力气太小", "仍然不会", "动作不漂亮"], "a": 0}], "L4": [{"t": "这房子家具全，电视、空调、冰箱都有并且都很新；离火车站也很近，交通方便，离您公司也不远，您可以坐公共汽车甚至可以骑自行车上班，把身体也锻炼了；价格也比较便宜，真的很值得考虑。", "qs": [{"q": "说话人最可能是做什么的？", "o": ["记者", "租房的", "买房的", "卖房的"], "a": 3}, {"q": "关于这房子，下列哪个正确？", "o": ["很贵", "离机场近", "交通方便", "周围风景不错"], "a": 2}]}, {"t": "狗是一种聪明的动物，它能听懂人的话，明白人的心情，会和人产生感情。人们喜欢养狗，是因为在孤单的时候，狗会陪着他们，互相信任，互相照顾。", "qs": [{"q": "根据这段话，狗有什么特点？", "o": ["干净", "聪明", "有趣", "有耐心"], "a": 1}, {"q": "人们为什么喜欢狗？", "o": ["可以更勇敢", "想减少危险", "会感到安全", "有时会孤单"], "a": 3}]}, {"t": "这个节目我一直在看，它介绍了很多生活中的小知识，包括怎样选择牙膏，擦脸应该用什么毛巾，怎样远离皮肤病等等。很多以前我没有注意到的问题，现在通过它了解了不少。", "qs": [{"q": "说话人在介绍什么？", "o": ["一本书", "一个报道", "一个广告", "一个电视节目"], "a": 3}, {"q": "说话人了解了哪方面的知识？", "o": ["艺术", "生活", "国际", "法律"], "a": 1}]}, {"t": "昨天，妻子让我陪她去买一双袜子。进了商店，她先去看帽子，觉得有个帽子很可爱，就买了一个。然后她又买了一条裤子、一件衬衫，把她身上带的钱全花完后我们就回家了。回家以后，我吃惊地发现，竟然没有买袜子。", "qs": [{"q": "他们计划买什么？", "o": ["袜子", "食品", "饮料", "洗衣机"], "a": 0}, {"q": "说话人是谁？", "o": ["丈夫", "导游", "司机", "售货员"], "a": 0}]}, {"t": "哭不一定是坏事。遇到伤心事，哭一场就会感觉心里舒服多了；人们成功的时候，因为激动会哭；人们获得爱情和友谊的时候，因为感动也会哭。所以说，哭不一定是坏事。", "qs": [{"q": "伤心时哭一哭会怎么样？", "o": ["更难过", "更紧张", "轻松许多", "觉得无聊"], "a": 2}, {"q": "这段话主要想告诉我们什么？", "o": ["要懂礼貌", "要有同情心", "要互相理解", "哭不一定不好"], "a": 3}]}], "R1": [{"bank": ["禁止", "海洋", "推迟", "坚持", "顺便", "估计"], "items": [["你去买啤酒吗？（　）帮我买一盒牛奶吧。", 4], ["刚才听广播说明天可能会下大雨，足球比赛恐怕要（　）了。", 2], ["飞机上（　）使用手机，飞行过程中手机也要关上。", 0], ["明天就可以在网上查成绩了，我（　）这次考得不坏。", 5], ["地球上约 71%的地方是蓝色的（　）。", 1]]}, {"bank": ["工具", "收", "温度", "到底", "辛苦", "抱歉"], "items": [["A：丽丽说再等她几分钟，她马上就来。\nB：她（　）在干什么呢，怎么这么慢？", 3], ["A：那个房间又脏又乱，星期六我去打扫、整理了一下。\nB：原来是你啊，（　）了，谢谢你！", 4], ["A：我刚从会议室过来，怎么一个人也没有？\nB：对不起，今天的会议改到明天上午了，您没（　）到通知吗？", 1], ["A：语言是交流的（　），只记字典、词典里的字、词是不够的，要多听多说。\nB：对，这才是学习汉语的好方法。", 0], ["A：真（　），我迟到了。\nB：没关系，表演还有 5 分钟才开始。", 5]]}], "R2": [["它就长满了这面墙，叶子很厚，绿绿的", "这种植物在这个季节长得很快", "经过短短一个星期", "BCA"], ["他很年轻", "比相同年龄的人更成熟", "可是遇到问题很冷静", "ACB"], ["让被批评的人不觉得难受，而且能感觉到是在帮助他", "例如批评人的时候要考虑用正确的方法", "管理是一门艺术", "CBA"], ["所以要想完全解决这个难题", "还需要找更好的办法", "这样做，只能暂时解决问题", "CAB"], ["所以这种游戏十分简单", "谁就赢了比赛", "谁在规定的时间内接到的球最多", "CBA"], ["这个任务没有那么困难", "而关键是要清楚我们的主要目的，找到重点", "我的看法是", "CAB"], ["我儿子的个子长得非常快", "今年春天就有很多不能穿了", "去年春天打折的时候我给他买了几件衣服", "ACB"], ["到时候你安排他们在市里参观一下", "今年暑假，有几个外国留学生要来学习一周", "其他的一些活动也都由你来组织", "BAC"], ["然而更多时候，留下的还是甜甜的回忆", "生活的味道是酸、甜、苦、辣、咸的", "其中的酸、苦、辣、咸是偶尔的不愉快", "BCA"], ["有的父母对孩子的要求很严格", "认为应该给孩子更多自己选择的机会", "有的父母正好相反", "ACB"]], "R3": [{"t": "刷牙的时候，水太冷或者太热，都会给牙的健康带来不好的影响。研究发现，用 35 度的温水刷牙才是最合适的。", "q": "刷牙时，我们应该：", "o": ["使用温水", "常换牙刷", "早晚各一次", "至少刷 5 分钟"], "a": 0}, {"t": "这种葡萄酒，不仅味道好，而且每个酒瓶也都像一件高级艺术品。很多人愿意出高价购买它，很多时候是被那些特别的酒瓶吸引了。", "q": "这种葡萄酒：", "o": ["比较甜", "是艺术品", "酒瓶很特别", "是当地制造的"], "a": 2}, {"t": "阅读能力好的人不但容易找到工作，而且工资也比较高。另外，阅读考试的分数往往还能反映一个国家的教育水平。", "q": "阅读能力好的人一般：", "o": ["收入高", "烦恼少", "经历丰富", "年龄比较大"], "a": 0}, {"t": "有些人喜欢不停地换工作，他们总以为新工作一定比现在的好。实际上，一般情况下，完全适应一个新的工作需要一年时间，因此，经常换工作不一定好，根据自己的条件，把一份工作坚持做到最好才是正确的选择。", "q": "有些人经常换工作是因为他们：", "o": ["极其努力", "非常得意", "工作不愉快", "相信新工作更好"], "a": 3}, {"t": "我喜欢读这份报纸，因为它的内容丰富，而且广告少，最重要的是，经济方面的新闻对我的工作很有帮助。", "q": "他喜欢这份报纸的原因之一是：", "o": ["免费", "价格低", "广告少", "笑话多"], "a": 2}, {"t": "医生提醒人们，在使用感冒药之前，一定要仔细阅读说明书。并且最好只选择一种感冒药，否则药物之间可能互相作用，会影响我们的健康。", "q": "医生一共有几个提醒？", "o": ["一个", "两个", "3 个", "4 个"], "a": 1}, {"t": "在中国生活的三年使他在音乐方面有了很多新的想法，他把京剧的一些特点增加到自己的音乐中，取得了很好的效果。", "q": "根据这段话，可以知道他：", "o": ["很热情", "会唱京剧", "受到京剧影响", "离开中国三年了"], "a": 2}, {"t": "儿子小时候一说话就脸红，回答老师问题的时候声音也很小，我当时很替他担心。但随着年龄的增长，他逐渐成熟了，大学毕业后成了一名优秀的律师，真让人吃惊。", "q": "“让人吃惊”的是儿子：", "o": ["当了律师", "变得很笨", "越来越帅", "赚了很多钱"], "a": 0}, {"t": "做生意时会遇到竞争带来的压力，但是大家的机会也是相同的。清楚地了解市场和顾客的需要，做一个符合市场发展需要的计划非常重要。", "q": "做生意需要重视：", "o": ["节约", "反对意见", "积累经验", "了解市场需求"], "a": 3}, {"t": "原谅是一种美，我们常说要学会原谅别人，但也要试着原谅自己。我们都有缺点，不可能把每件事都做得很好。", "q": "这段话主要说，我们应该：", "o": ["感谢别人", "尊重别人", "原谅自己", "成为优秀的人"], "a": 2}, {"t": "您好，我们翻译，每 1000 字 150 元人民币。这些信息在公司网站上都有详细的介绍，您有什么特别要求或任何不清楚的地方欢迎和我们联系。", "q": "说话人正在做什么？", "o": ["总结", "招聘", "介绍", "道歉"], "a": 2}, {"t": "大部分人每天晚上至少应该睡 7 个小时，但是这个标准并不适合每一个人，有些人即使只睡 5 个小时也很有精神。", "q": "每天晚上睡 7 个小时适合：", "o": ["儿童", "胖子", "所有人", "大部分人"], "a": 3}, {"t": "很多时候孩子发脾气是为了得到一些好处，父母不能因为孩子发脾气就给他好处。如果我们不重视这个问题，他就容易养成发脾气的坏习惯。", "q": "孩子发脾气主要是因为：", "o": ["缺少关心", "父母批评他", "想得到好处", "想引起别人注意"], "a": 2}, {"t": "什么是真正的朋友？有些人觉得就是能和自己一起快乐的人，其实朋友应该像镜子，能帮你看清自己的缺点；无论你成功或者失败，永远都支持你。", "q": "这段话主要谈：", "o": ["谁能成功", "学会改变", "怎样支持朋友", "什么是真朋友"], "a": 3}, {"t": "世界上第一部无声电影出现的时候，吸引了成千上万的观众。有个女观众看到电影中有一辆马车向自己跑过来，害怕得离开了座位，跑得远远的，直到那辆马车在画面中不见了，她才回到座位上。有的观众看到电影里下雨的画面，把自己的雨伞也打了起来。现在我们都觉得挺好笑的，但是看电影在当时确实是个新鲜事儿。", "q": "世界上第一部无声电影：", "o": ["很幽默", "不成功", "观众很多", "内容复杂"], "a": 2}, {"t": "世界上第一部无声电影出现的时候，吸引了成千上万的观众。有个女观众看到电影中有一辆马车向自己跑过来，害怕得离开了座位，跑得远远的，直到那辆马车在画面中不见了，她才回到座位上。有的观众看到电影里下雨的画面，把自己的雨伞也打了起来。现在我们都觉得挺好笑的，但是看电影在当时确实是个新鲜事儿。", "q": "那个观众为什么要打伞？", "o": ["误会了", "下雨了", "风太大", "害怕马车"], "a": 0}, {"t": "研究证明，女孩子们对衣服颜色的选择往往与她们的性格有关。喜欢穿白色衣服的女孩子们性格比较阳光，生活态度积极向上是她们的共同特点；而喜欢红色衣服的女孩子们性格比较浪漫，在爱情上也比较主动。", "q": "喜欢穿白色衣服的女孩子在生活中：", "o": ["很懒", "很害羞", "很主动", "不幸福"], "a": 2}, {"t": "研究证明，女孩子们对衣服颜色的选择往往与她们的性格有关。喜欢穿白色衣服的女孩子们性格比较阳光，生活态度积极向上是她们的共同特点；而喜欢红色衣服的女孩子们性格比较浪漫，在爱情上也比较主动。", "q": "这段话主要讲了颜色和什么的关系？", "o": ["理想", "能力", "性格", "性别"], "a": 2}, {"t": "科学技术的发展确实给生活带来了许多方便，但也给我们增加了不少烦恼。最普遍的是，每个现代人头脑中都要记住很多密码：信用卡需要密码，电脑需要密码，电子信箱需要密码，有时候甚至连开门都需要密码。如果谁不小心忘记了这些密码，那麻烦可就大了。", "q": "人们需要记住什么？", "o": ["友谊", "答案", "密码", "号码"], "a": 2}, {"t": "科学技术的发展确实给生活带来了许多方便，但也给我们增加了不少烦恼。最普遍的是，每个现代人头脑中都要记住很多密码：信用卡需要密码，电脑需要密码，电子信箱需要密码，有时候甚至连开门都需要密码。如果谁不小心忘记了这些密码，那麻烦可就大了。", "q": "给人们带来烦恼的是：", "o": ["科学技术", "电子信箱", "工作压力", "环境污染"], "a": 0}], "W1": [[["会弹钢琴的人", "羡慕", "很", "她"], ["她很羡慕会弹钢琴的人。", "会弹钢琴的人很羡慕她。"]], [["亚洲经济的", "正在", "逐渐", "提高", "增长速度"], ["亚洲经济的增长速度正在逐渐提高。"]], [["专为老年人", "提供的", "这椅子", "是"], ["这椅子是专为老年人提供的。"]], [["中文", "很流利", "说得", "他的"], ["他的中文说得很流利。"]], [["已经", "报名人数", "900", "超过了"], ["报名人数已经超过了 900。"]], [["请", "从小到大的顺序", "按", "排列", "这些数字"], ["请按从小到大的顺序排列这些数字。", "这些数字请按从小到大的顺序排列。"]], [["作者", "很有名", "小说的", "那本"], ["那本小说的作者很有名。"]], [["合格的警察", "最需要的", "一个", "是责任感"], ["一个合格的警察最需要的是责任感。"]], [["代表们", "结束", "会议", "决定"], ["代表们决定结束会议。"]], [["对", "很熟悉", "我", "这个城市"], ["我对这个城市很熟悉。", "对这个城市我很熟悉。"]]], "W2": [["日记", "她每天都坚持写日记。"], ["尝", "你尝一尝？味道很好。"], ["破", "鸡蛋被打破了。"], ["凉快", "走在海边，感觉很凉快。"], ["活泼", "这个小女孩儿很活泼。"]], "IMG": ["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"]};
+
+/* ================= Thi thử theo cấu trúc đề HSK 3.0 ================= */
+/* Số câu, số phần, thời gian: theo đề mẫu HSK 3.0 (đề cương 11/2025). Dạng câu trong từng phần là mô phỏng. */
+let EX=null,EXT=null;
+const EXD={
+1:{secs:[
+ {k:'L',n:'Nghe',min:12,timed:false,parts:[
+  {n:5,t:'lword',d:'Nghe một từ, chọn chữ Hán đúng'},
+  {n:5,t:'lsent',d:'Nghe một câu, chọn nghĩa đúng'},
+  {n:5,t:'ltext',pref:'d',d:'Nghe hội thoại ngắn, trả lời câu hỏi'},
+  {n:5,t:'ltext',pref:'m',d:'Nghe đoạn ngắn, trả lời câu hỏi'}]},
+ {k:'R',n:'Đọc',min:20,timed:true,parts:[
+  {n:5,t:'rsent',d:'Đọc câu, chọn nghĩa đúng'},
+  {n:5,t:'rcloze',d:'Chọn từ điền vào chỗ trống'},
+  {n:5,t:'rtext',pref:'d',d:'Đọc hội thoại, trả lời câu hỏi'},
+  {n:5,t:'rtext',pref:'m',d:'Đọc đoạn ngắn, trả lời câu hỏi'}]}]},
+2:{secs:[
+ {k:'L',n:'Nghe',min:20,timed:false,parts:[
+  {n:5,t:'lword',d:'Nghe một từ, chọn chữ Hán đúng'},
+  {n:5,t:'lsent',d:'Nghe một câu, chọn nghĩa đúng'},
+  {n:5,t:'ltext',pref:'d',d:'Nghe hội thoại, trả lời câu hỏi'},
+  {n:5,t:'ltext',pref:'m',d:'Nghe đoạn ngắn, trả lời câu hỏi'},
+  {n:5,t:'ltext',pref:'m',d:'Nghe đoạn dài hơn, trả lời câu hỏi'}]},
+ {k:'R',n:'Đọc',min:25,timed:true,parts:[
+  {n:5,t:'rsent',d:'Đọc câu, chọn nghĩa đúng'},
+  {n:5,t:'rcloze',d:'Chọn từ điền vào chỗ trống (1)'},
+  {n:5,t:'rcloze',d:'Chọn từ điền vào chỗ trống (2)'},
+  {n:5,t:'rtext',pref:'d',d:'Đọc hội thoại, trả lời câu hỏi'},
+  {n:5,t:'rtext',pref:'m',d:'Đọc đoạn ngắn, trả lời câu hỏi'}]},
+ {k:'W',n:'Viết',min:15,timed:true,parts:[
+  {n:5,t:'wfill',d:'Viết chữ Hán cho từ còn thiếu (cho pinyin)'},
+  {n:5,t:'wfill',d:'Viết chữ Hán cho từ còn thiếu (cho pinyin)'}]}]},
+3:{secs:[
+ {k:'L',n:'Nghe',min:23,timed:false,parts:[
+  {n:10,t:'lsent',d:'Nghe một câu, chọn nghĩa đúng'},
+  {n:10,t:'ltext',pref:'d',d:'Nghe hội thoại và một câu hỏi'},
+  {n:10,t:'ltext',pref:'m',d:'Nghe đoạn ngắn và một câu hỏi'}]},
+ {k:'R',n:'Đọc',min:30,timed:true,parts:[
+  {n:10,t:'rcloze',d:'Chọn từ điền vào chỗ trống'},
+  {n:10,t:'rtext',pref:'d',d:'Đọc hội thoại, trả lời câu hỏi'},
+  {n:10,t:'rtext',pref:'m',d:'Đọc đoạn văn, trả lời câu hỏi'}]},
+ {k:'W',n:'Viết',min:20,timed:true,parts:[
+  {n:5,t:'wfill',d:'Viết chữ Hán cho từ còn thiếu (cho pinyin)'},
+  {n:5,t:'wpic',d:'Nhìn tranh, dùng từ cho sẵn để viết câu'}]}]},
+4:{secs:[
+ {k:'L',n:'Nghe',min:20,timed:false,parts:[
+  {n:14,t:'ltext',pref:'d',d:'Nghe hội thoại ngắn và một câu hỏi'},
+  {n:18,t:'ltext',pref:'m',d:'Nghe hội thoại dài hoặc đoạn văn, trả lời câu hỏi'}]},
+ {k:'R',n:'Đọc',min:30,timed:true,parts:[
+  {n:10,t:'rcloze',d:'Chọn từ điền vào chỗ trống'},
+  {n:15,t:'rtext',pref:'m',d:'Đọc đoạn văn, trả lời câu hỏi'},
+  {n:7,t:'rpara',d:'Chọn câu điền vào chỗ trống trong đoạn văn'}]},
+ {k:'W',n:'Viết',min:25,timed:true,parts:[
+  {n:5,t:'wfill',d:'Viết chữ Hán cho từ còn thiếu (cho pinyin)'},
+  {n:1,t:'wessay',d:'Viết đoạn văn ngắn, ít nhất 80 chữ'}]}]}
+};
+
+/* ---- Ngân hàng câu bổ sung (tự soạn) ---- */
+const EXCLOZE=[
+{l:2,s:"我每天___公共汽车去上班。",o:["坐","骑","看"],a:"坐",t:"Mỗi ngày tôi đi xe buýt đi làm.",e:"Đi xe buýt, tàu (có chỗ ngồi) dùng 坐. 骑 dùng cho xe đạp, xe máy."},
+{l:2,s:"你的手机放___桌子上。",o:["在","是","有"],a:"在",t:"Điện thoại của bạn để ở trên bàn.",e:"放在…上 = đặt ở trên…; 在 đứng sau động từ để chỉ nơi chốn."},
+{l:2,s:"他比我___两岁。",o:["大","高","多"],a:"大",t:"Anh ấy lớn hơn tôi hai tuổi.",e:"So sánh tuổi: 比 + người + 大 + số tuổi."},
+{l:2,s:"今天太热了,我想喝一杯___水。",o:["冰","新","慢"],a:"冰",t:"Hôm nay nóng quá, tôi muốn uống một cốc nước đá.",e:"冰水 = nước đá, nước lạnh."},
+{l:2,s:"请问,去火车站___走?",o:["怎么","什么","为什么"],a:"怎么",t:"Xin hỏi, đi đến ga tàu thì đi thế nào?",e:"怎么走 = đi như thế nào, dùng để hỏi đường."},
+{l:2,s:"我妈妈做的菜很好___。",o:["吃","看","听"],a:"吃",t:"Món mẹ tôi nấu rất ngon.",e:"好吃 = ngon (đồ ăn)."},
+{l:2,s:"老师说得太快,我没___懂。",o:["听","看","写"],a:"听",t:"Cô giáo nói nhanh quá, tôi nghe chưa hiểu.",e:"听懂 = nghe hiểu; 没听懂 = nghe chưa hiểu."},
+{l:2,s:"现在___点了?我们快走吧。",o:["几","多少","什么"],a:"几",t:"Bây giờ mấy giờ rồi? Chúng ta đi nhanh thôi.",e:"Hỏi giờ dùng 几点."},
+{l:2,s:"他___银行工作。",o:["在","是","有"],a:"在",t:"Anh ấy làm việc ở ngân hàng.",e:"在 + nơi chốn + động từ: làm gì ở đâu."},
+{l:3,s:"虽然天气不好,___我们还是去爬山了。",o:["但是","因为","如果"],a:"但是",t:"Tuy thời tiết không tốt nhưng chúng tôi vẫn đi leo núi.",e:"虽然…但是…: tuy… nhưng…."},
+{l:3,s:"___你有时间,就来我家玩儿吧。",o:["如果","虽然","因为"],a:"如果",t:"Nếu bạn có thời gian thì đến nhà tôi chơi nhé.",e:"如果…就…: nếu… thì…."},
+{l:3,s:"他的汉语说得很___,像中国人一样。",o:["标准","安静","干净"],a:"标准",t:"Anh ấy nói tiếng Trung rất chuẩn, như người Trung Quốc vậy.",e:"说得很标准 = nói rất chuẩn. 安静 (yên tĩnh), 干净 (sạch) không dùng cho cách nói."},
+{l:3,s:"这件衣服太贵了,能不能___一点儿?",o:["便宜","容易","方便"],a:"便宜",t:"Cái áo này đắt quá, có thể rẻ hơn một chút không?",e:"便宜一点儿 = rẻ hơn một chút (khi mặc cả)."},
+{l:3,s:"出门以前,别忘了___灯。",o:["关","买","带"],a:"关",t:"Trước khi ra khỏi nhà đừng quên tắt đèn.",e:"关灯 = tắt đèn."},
+{l:3,s:"我对中国文化很感___。",o:["兴趣","爱好","希望"],a:"兴趣",t:"Tôi rất hứng thú với văn hóa Trung Quốc.",e:"对…感兴趣 = hứng thú với…."},
+{l:3,s:"他每天都坚持___身体,所以很健康。",o:["锻炼","检查","参加"],a:"锻炼",t:"Ngày nào anh ấy cũng kiên trì rèn luyện thân thể nên rất khỏe.",e:"锻炼身体 = rèn luyện sức khỏe."},
+{l:3,s:"机场离这儿很远,坐出租车要一个___。",o:["小时","时候","时间"],a:"小时",t:"Sân bay cách đây rất xa, đi taxi mất một tiếng.",e:"一个小时 = một tiếng đồng hồ."},
+{l:3,s:"我___你一个好消息:我找到工作了!",o:["告诉","说","问"],a:"告诉",t:"Tôi báo cho bạn một tin vui: tôi tìm được việc rồi!",e:"告诉 + người + điều gì = nói cho ai biết điều gì."},
+{l:3,s:"他不但会说汉语,___会写汉字。",o:["而且","所以","但是"],a:"而且",t:"Anh ấy không những biết nói tiếng Trung mà còn biết viết chữ Hán.",e:"不但…而且…: không những… mà còn…."},
+{l:4,s:"他对工作非常___,从来没有迟到过。",o:["负责","打算","允许"],a:"负责",t:"Anh ấy rất có trách nhiệm với công việc, chưa từng đi muộn.",e:"对…负责 = có trách nhiệm với…."},
+{l:4,s:"虽然这次比赛我们输了,但是我们没有___,明年继续努力。",o:["放弃","拒绝","批评"],a:"放弃",t:"Tuy trận này chúng tôi thua nhưng không bỏ cuộc, năm sau tiếp tục cố gắng.",e:"放弃 = từ bỏ, bỏ cuộc."},
+{l:4,s:"经理说这个任务很重要,不能___。",o:["推迟","表扬","参加"],a:"推迟",t:"Giám đốc nói nhiệm vụ này rất quan trọng, không được trì hoãn.",e:"推迟 = lùi lại, hoãn."},
+{l:4,s:"这个办法虽然简单,___很有效。",o:["却","就","才"],a:"却",t:"Cách này tuy đơn giản nhưng rất hiệu quả.",e:"虽然…却…: tuy… nhưng…; 却 đứng sau chủ ngữ, trước vị ngữ."},
+{l:4,s:"为了保护环境,我们应该少用___袋。",o:["塑料","电子","国际"],a:"塑料",t:"Để bảo vệ môi trường, chúng ta nên dùng ít túi ni lông.",e:"塑料袋 = túi nhựa, túi ni lông."},
+{l:4,s:"他的建议对我帮助很大,我非常___他。",o:["感谢","批评","打扰"],a:"感谢",t:"Lời khuyên của anh ấy giúp tôi rất nhiều, tôi rất biết ơn anh ấy.",e:"感谢 = cảm ơn, biết ơn."},
+{l:4,s:"我们公司明天要和客户___合同。",o:["签","洗","放"],a:"签",t:"Ngày mai công ty chúng tôi sẽ ký hợp đồng với khách hàng.",e:"签合同 = ký hợp đồng."},
+{l:4,s:"这个城市的空气___越来越严重了。",o:["污染","环境","温度"],a:"污染",t:"Ô nhiễm không khí của thành phố này ngày càng nghiêm trọng.",e:"空气污染 = ô nhiễm không khí."},
+{l:4,s:"如果你想提高成绩,就必须___学习方法。",o:["改变","打扫","结束"],a:"改变",t:"Nếu muốn nâng cao thành tích, bạn phải thay đổi phương pháp học.",e:"改变 = thay đổi."},
+{l:4,s:"听到这个好消息,大家都___地笑了。",o:["开心","安静","干净"],a:"开心",t:"Nghe tin vui này, mọi người đều cười vui vẻ.",e:"开心地笑 = cười vui vẻ; 地 nối trạng ngữ với động từ."}
+];
+/* Đoạn văn có chỗ trống: chọn câu phù hợp nhất (đáp án đúng là câu đầu trong "o", sẽ được xáo trộn) */
+const EXPARA=[
+{b:"小王每天早上六点起床。",a:"因为他觉得早上锻炼对身体很好。",o:["起床以后,他先去公园跑步。","他的公司离家很远。","昨天晚上他睡得很晚。"],t:"Mỗi sáng Tiểu Vương dậy lúc 6 giờ. Dậy xong, anh ấy đi chạy bộ ở công viên trước. Vì anh ấy thấy tập thể dục buổi sáng rất tốt cho sức khỏe.",e:"Câu sau bắt đầu bằng 因为 giải thích lý do tập thể dục, nên chỗ trống phải nói về việc tập luyện."},
+{b:"我想在周末请朋友来家里吃饭。",a:"可是我不知道应该做什么菜。",o:["我已经把家里打扫干净了。","我的朋友们都喜欢运动。","上个星期我去了北京。"],t:"Tôi muốn cuối tuần mời bạn đến nhà ăn cơm. Tôi đã dọn nhà sạch sẽ rồi. Nhưng tôi không biết nên nấu món gì.",e:"可是 chuyển ý sau phần chuẩn bị: đã dọn nhà xong nhưng chưa biết nấu gì."},
+{b:"上个月公司来了一位新同事。",a:"所以大家都愿意和他一起工作。",o:["他工作很认真,也很爱帮助别人。","公司的电梯坏了。","他最近想换一个手机。"],t:"Tháng trước công ty có thêm một đồng nghiệp mới. Anh ấy làm việc nghiêm túc và hay giúp đỡ người khác. Vì vậy ai cũng muốn làm việc cùng anh ấy.",e:"所以 nêu kết quả; nguyên nhân hợp lý là tính cách và thái độ làm việc của anh ấy."},
+{b:"昨天下午突然下起了大雨。",a:"幸好一个陌生人借给了我一把伞。",o:["我没带伞,不知道怎么回家。","我昨天晚上看了一个电影。","雨停以后,天气变得很热。"],t:"Chiều qua trời đột nhiên mưa to. Tôi không mang ô, không biết về nhà thế nào. May mà một người lạ cho tôi mượn một chiếc ô.",e:"幸好 + người lạ cho mượn ô: trước đó phải là tình huống không có ô."},
+{b:"我一直想学会游泳。",a:"现在我已经能游五百米了。",o:["去年夏天,我报名参加了游泳课。","游泳馆旁边有一家商店。","我的哥哥喜欢踢足球。"],t:"Tôi luôn muốn học bơi. Mùa hè năm ngoái tôi đăng ký lớp bơi. Bây giờ tôi đã bơi được 500 mét.",e:"Từ muốn học đến giờ đã bơi được: cần một bước ở giữa là đăng ký học."},
+{b:"这家饭馆的菜味道不错。",a:"所以每到周末,都要排很长的队。",o:["价格也不贵,很多人都爱来这儿吃饭。","老板是北方人,今年四十岁。","饭馆旁边有一个公园。"],t:"Món ở quán này ngon. Giá cũng không đắt, nhiều người thích đến đây ăn. Vì vậy cuối tuần nào cũng phải xếp hàng rất dài.",e:"所以 + xếp hàng dài: nguyên nhân là quán đông khách vì ngon và rẻ."},
+{b:"李明准备参加汉语考试。",a:"他每天晚上都复习两个小时。",o:["这次考试对他找工作很重要。","他的朋友买了一辆新车。","他家的猫特别可爱。"],t:"Lý Minh chuẩn bị thi tiếng Trung. Kỳ thi này rất quan trọng với việc tìm việc của anh ấy. Tối nào anh ấy cũng ôn hai tiếng.",e:"Câu giữa giải thích vì sao anh ấy ôn chăm chỉ."},
+{b:"很多年轻人喜欢在网上买东西。",a:"不过,买到不合适的东西时,退货也比较麻烦。",o:["网上的东西种类多,价格也常常比商店便宜。","他们都不喜欢看电视。","有些商店周末不开门。"],t:"Nhiều bạn trẻ thích mua đồ trên mạng. Đồ trên mạng nhiều loại, giá thường rẻ hơn cửa hàng. Có điều, mua phải đồ không hợp thì trả hàng khá phiền.",e:"不过 chuyển sang mặt hạn chế, nên trước đó cần nêu ưu điểm của mua hàng trực tuyến."},
+{b:"我们学校旁边新开了一家图书馆。",a:"很多学生一下课就去那里看书。",o:["那里环境安静,还提供免费的网络。","图书馆前面有一棵很大的树。","我昨天在那里遇到了一个老师。"],t:"Cạnh trường chúng tôi mới mở một thư viện. Ở đó yên tĩnh, còn có mạng miễn phí. Rất nhiều học sinh vừa tan học đã đến đó đọc sách.",e:"Câu cuối nói học sinh đổ xô đến, nên câu giữa phải nêu lý do thu hút."},
+{b:"我的手机突然打不开了。",a:"幸运的是,店员很快就帮我修好了。",o:["我马上把它送到了手机店。","我的手机是去年买的。","我喜欢用手机听音乐。"],t:"Điện thoại của tôi đột nhiên không mở được. Tôi lập tức mang nó đến cửa hàng. May là nhân viên sửa cho tôi rất nhanh.",e:"Nhân viên sửa giúp nên trước đó phải có hành động mang máy đến cửa hàng."}
+];
+/* Nhìn tranh (emoji) + từ cho sẵn → viết một câu */
+const EXPIC=[
+{em:"☔",w:"下雨",h:"Trời mưa",m:"今天下雨了,我没有带伞。",mv:"Hôm nay trời mưa, tôi không mang ô."},
+{em:"📚",w:"图书馆",h:"Thư viện",m:"我常常去图书馆看书。",mv:"Tôi thường đến thư viện đọc sách."},
+{em:"🚌",w:"公共汽车",h:"Xe buýt",m:"我每天坐公共汽车去学校。",mv:"Mỗi ngày tôi đi xe buýt đến trường."},
+{em:"🍜",w:"好吃",h:"Món mì",m:"这碗面条很好吃。",mv:"Bát mì này rất ngon."},
+{em:"📱",w:"手机",h:"Điện thoại",m:"我的手机放在桌子上。",mv:"Điện thoại của tôi để ở trên bàn."},
+{em:"🎂",w:"生日",h:"Bánh sinh nhật",m:"明天是我朋友的生日。",mv:"Ngày mai là sinh nhật bạn tôi."},
+{em:"✈️",w:"机场",h:"Máy bay",m:"我们明天早上去机场。",mv:"Sáng mai chúng tôi đến sân bay."},
+{em:"🏃",w:"跑步",h:"Chạy bộ",m:"他每天早上都去公园跑步。",mv:"Sáng nào anh ấy cũng ra công viên chạy bộ."},
+{em:"🧳",w:"旅游",h:"Va li",m:"暑假我想去北京旅游。",mv:"Kỳ nghỉ hè tôi muốn đi Bắc Kinh du lịch."},
+{em:"💻",w:"电脑",h:"Máy tính",m:"他正在用电脑写邮件。",mv:"Anh ấy đang dùng máy tính viết email."}
+];
+const EXESSAY=[
+{z:"请写一写你最难忘的一次旅行。",v:"Hãy viết về chuyến đi khiến bạn nhớ nhất.",kw:["旅行","朋友","难忘"]},
+{z:"请介绍一位你的好朋友。",v:"Hãy giới thiệu một người bạn thân của bạn.",kw:["朋友","认识","性格"]},
+{z:"请说一说你为什么学习汉语。",v:"Hãy nói vì sao bạn học tiếng Trung.",kw:["汉语","工作","希望"]},
+{z:"请写一写你一天的生活。",v:"Hãy viết về một ngày của bạn.",kw:["早上","工作","晚上"]},
+{z:"请谈谈你对保护环境的看法。",v:"Hãy nói quan điểm của bạn về bảo vệ môi trường.",kw:["环境","保护","办法"]},
+{z:"请写一次别人帮助你,或者你帮助别人的经历。",v:"Hãy viết về một lần được giúp đỡ hoặc giúp đỡ người khác.",kw:["帮助","经历","感谢"]}
+];
+
+/* ---- Tiện ích ---- */
+const hanCount=s=>(String(s).match(/[\u4e00-\u9fff]/g)||[]).length;
+const exNorm=s=>String(s||'').replace(/[\s，。！？、,.!?：:；;“”"'（）()]/g,'');
+const exSents=lv=>{const seen=new Set();return[...SENT,...SENTX,...SENTY].filter(s=>{const k=s.w.join('');if(s.l!==lv||seen.has(k))return false;seen.add(k);return true}).map(s=>({id:'s:'+s.w.join(''),s}))};
+const exTexts=lv=>[...TEXTS,...TEXTP,...TEXTW,...TEXTN].filter(t=>t.l===lv&&t.qs&&t.qs.length);
+const exPairs=lv=>{const o=[];exTexts(lv).forEach(t=>t.qs.forEach((q,i)=>o.push({t,q,i,id:t.id+':'+i})));return o};
+const exIsDlg=t=>t.k==='dialogue';
+/* lấy n phần tử chưa dùng, ưu tiên (pref) và ưu tiên mỗi bài đọc chỉ một câu */
+function exTake(pool,n,pref,used,grp){
+  const free=shuffle(pool.filter(x=>!used.has(x.id))),out=[],gs=new Set();
+  const passes=[x=>pref(x)&&!gs.has(grp(x)),x=>!gs.has(grp(x)),x=>pref(x),()=>true];
+  for(const f of passes){
+    for(const x of free){if(out.length>=n)break;if(out.includes(x))continue;if(f(x)){out.push(x);gs.add(grp(x))}}
+    if(out.length>=n)break;
+  }
+  out.forEach(x=>used.add(x.id));
+  return out;
+}
+const exOpts=(ans,wrongs)=>shuffle([ans,...wrongs]);
+function exAudioWindow(t,q){
+  let L=t.lines;
+  if(L.length>4&&q.s!=null){const a=Math.max(0,q.s-1),b=Math.max(q.s+1,2);L=L.slice(a,b)}
+  return L.map((l,i)=>({t:l[1],p:(l[0]===(L[0]&&L[0][0]))?1:1.18,sp:l[0]}));
+}
+const exLinesHTML=(L,vi)=>L.map(l=>`<div class="ctxl"><p class="hz" style="font-size:18px;font-weight:500;margin-bottom:0">${l[0]?esc(l[0])+'：':''}${esc(l[1])}</p><div class="pyl">${esc(l[2]||PY(l[1]))}</div>${vi?`<div class="muted"><small>${esc(l[3]||'')}</small></div>`:''}</div>`).join('');
+
+/* ---- Bộ tạo câu hỏi ---- */
+function exMakeQ(ty,lv,part,ctx){
+  const {used,sents,pairs,wordPool}=ctx;
+  const mk=o=>Object.assign({part,ty,sec:o.sec},o);
+  if(ty==='lword'){
+    const w=exTake(wordPool,1,()=>true,used,x=>x.id)[0];if(!w)return null;const x=w.w;
+    const wr=shuffle(WORDS.filter(z=>z.l<=lv&&z.h!==x.h&&z.p!==x.p&&[...z.h].length<=3)).slice(0,3).map(z=>z.h);
+    return mk({sec:'L',k:'mc',audio:[{t:x.h,p:1}],stem:'',opts:exOpts(x.h,wr),ans:x.h,hz:true,pt:'Nghe từ: '+x.h,exp:wexp(x)});
+  }
+  if(ty==='lsent'||ty==='rsent'){
+    const it=exTake(sents,1,()=>true,used,x=>x.id)[0];if(!it)return null;const s=it.s,zh=s.w.join('');
+    const wr=shuffle(sents.filter(z=>z.s.t!==s.t)).slice(0,3).map(z=>z.s.t);
+    const base={k:'mc',opts:exOpts(s.t,wr),ans:s.t,exp:`${hzp(zh)}${esc(s.t)}<br><small>${esc(s.e||'')}</small>`};
+    if(ty==='lsent')return mk(Object.assign(base,{sec:'L',audio:[{t:zh,p:1}],stem:'',pt:'Nghe câu: '+zh,zh}));
+    return mk(Object.assign(base,{sec:'R',stem:`<span class="hz" style="font-size:24px">${esc(zh)}</span><div class="pyl">${esc(PY(zh))}</div>`,pt:'Đọc câu: '+zh,zh}));
+  }
+  if(ty==='ltext'||ty==='rtext'){
+    const pref=ctx.pref==='d'?(x=>exIsDlg(x.t)):(x=>!exIsDlg(x.t));
+    const p=exTake(pairs,1,pref,used,x=>x.t.id)[0];if(!p)return null;const {t,q}=p;
+    const ans=q.o[q.a],ev=q.s!=null?`<br>Căn cứ: <span class="hz">${esc(t.lines[q.s][1])}</span><span class="pyk">${esc(t.lines[q.s][2]||'')}</span>${esc(t.lines[q.s][3]||'')}`:'';
+    const hz=/[\u4e00-\u9fff]/.test(q.o.join(''));
+    if(ty==='ltext'){
+      const au=exAudioWindow(t,q);au.push({t:'问：'+q.z,p:1,q:1});
+      return mk({sec:'L',k:'mc',audio:au,stem:'',opts:shuffle(q.o),ans,hz,pt:'Nghe: '+q.z,qz:q.z,qv:q.v,tx:t,
+        exp:`<b>${esc(q.z)}</b> <small>${esc(q.v)}</small><br>Đáp án: <b>${esc(ans)}</b>${ev}`,
+        err:{prompt:`<span class="hz" style="font-size:20px">${esc(q.z)}</span><div class="pyl">${esc(PY(q.z))}</div><small>${esc(q.v)}</small>`,speak:au.map(l=>l.t).join('。')}});
+    }
+    const ctxh=`<div class="ctx0">${exLinesHTML(t.lines)}</div>`;
+    return mk({sec:'R',k:'mc',stem:ctxh+`<p class="qp hz" style="font-size:20px">${esc(q.z)}</p><div class="pyl">${esc(PY(q.z))}</div><small>${esc(q.v)}</small>`,
+      opts:shuffle(q.o),ans,hz,pt:t.t+': '+q.z,exp:`Đáp án: <b>${esc(ans)}</b>${ev}`,
+      err:{prompt:`<details class="ctx" open><summary>Xem bài đọc</summary>${exLinesHTML(t.lines,false)}</details><span class="hz" style="font-size:20px">${esc(q.z)}</span><div class="pyl">${esc(PY(q.z))}</div><small>${esc(q.v)}</small>`}});
+  }
+  if(ty==='rcloze'){
+    const f=exTake(ctx.cloze,1,()=>true,used,x=>x.id)[0];if(!f)return null;const c=f.f;
+    return mk({sec:'R',k:'mc',stem:`<span class="hz" style="font-size:26px">${esc(c.s)}</span>`,opts:shuffle(c.o),ans:c.a,hz:true,pt:'Điền từ: '+c.s,
+      exp:`<span class="hz">${esc(c.s.replace('___',c.a))}</span><span class="pyk">${esc(PY(c.s.replace('___',c.a)))}</span>${esc(c.t)}<br><small>${esc(c.e||'')}</small>`,
+      err:{prompt:`Điền từ vào chỗ trống:<br><span class="hz" style="font-size:26px">${esc(c.s)}</span>`}});
+  }
+  if(ty==='rpara'){
+    const f=exTake(ctx.para,1,()=>true,used,x=>x.id)[0];if(!f)return null;const p=f.f,ans=p.o[0];
+    const blank='<span class="ex-blank">（　　　　　　）</span>';
+    return mk({sec:'R',k:'mc',stem:`<p class="hz" style="font-size:20px;line-height:1.9">${esc(p.b)}${blank}${esc(p.a)}</p><div class="pyl">${esc(PY(p.b))} … ${esc(PY(p.a))}</div><small>Chọn câu điền vào chỗ trống cho hợp lý nhất.</small>`,
+      opts:shuffle(p.o),ans,hz:true,pt:'Đoạn văn: '+p.b,
+      exp:`<span class="hz">${esc(p.b+ans+p.a)}</span><span class="pyk">${esc(PY(p.b+ans+p.a))}</span>${esc(p.t)}<br><small>${esc(p.e)}</small>`,
+      err:{prompt:`<p class="hz" style="font-size:20px;line-height:1.9">${esc(p.b)}${blank}${esc(p.a)}</p><small>Chọn câu điền vào chỗ trống.</small>`}});
+  }
+  if(ty==='wfill'){
+    const bad=new Set(['的','了','吗','呢','吧','啊','么','和','也','都','很']);
+    let pick=null,tries=0;
+    while(!pick&&tries++<40){
+      const it=exTake(sents,1,()=>true,new Set(),x=>x.id)[0];if(!it)break;
+      if(used.has(it.id))continue;
+      const w=it.s.w,idx=w.map((t,i)=>i).filter(i=>{const t=w[i];return HAN.test(t)&&[...t].length<=3&&!bad.has(t)&&(WBY[t]||[...t].length>=2)});
+      if(w.length>=3&&idx.length){used.add(it.id);pick={s:it.s,i:idx[Math.floor(Math.random()*idx.length)]}}
+    }
+    if(!pick)return null;const w=pick.s.w,ans=w[pick.i],py=(WBY[ans]&&WBY[ans].p)||PY(ans);
+    const shown=w.map((t,i)=>i===pick.i?'＿＿＿':t).join('');
+    return mk({sec:'W',k:'hz',stem:`<p class="hz" style="font-size:26px">${esc(shown)}</p><p>Viết chữ Hán cho chỗ trống. Pinyin: <b class="ex-py">${esc(py)}</b></p>`,ans,py,pt:'Viết chữ Hán: '+shown,
+      exp:`<span class="hz">${esc(w.join(''))}</span><span class="pyk">${esc(PY(w.join('')))}</span>${esc(pick.s.t)}<br>Chữ cần viết: <b class="hz">${esc(ans)}</b> (${esc(py)})`});
+  }
+  if(ty==='wpic'){
+    const f=exTake(ctx.pic,1,()=>true,used,x=>x.id)[0];if(!f)return null;const p=f.f;
+    return mk({sec:'W',k:'pic',word:p.w,stem:`<div class="ex-em" aria-hidden="true">${p.em}</div><p>Hình: <b>${esc(p.h)}</b>. Dùng từ <span class="hz" style="font-size:24px">${esc(p.w)}</span> để viết <b>một câu</b> (ít nhất 6 chữ Hán).</p>`,
+      ans:p.m,pt:'Viết câu với '+p.w,exp:`Câu mẫu: <span class="hz">${esc(p.m)}</span><span class="pyk">${esc(PY(p.m))}</span>${esc(p.mv)}<br><small>App chỉ kiểm tra có dùng từ cho sẵn và đủ độ dài; bạn tự đối chiếu ngữ pháp với câu mẫu.</small>`});
+  }
+  if(ty==='wessay'){
+    const f=exTake(ctx.essay,1,()=>true,used,x=>x.id)[0];if(!f)return null;const p=f.f;
+    return mk({sec:'W',k:'essay',min:80,kw:p.kw,stem:`<p class="hz" style="font-size:22px">${esc(p.z)}</p><div class="pyl">${esc(PY(p.z))}</div><p>${esc(p.v)}<br>Viết <b>ít nhất 80 chữ Hán</b>. Gợi ý từ nên dùng: <span class="hz">${p.kw.map(esc).join('、')}</span></p>`,
+      ans:'(bài viết tự do)',pt:'Viết đoạn văn: '+p.z,exp:`Đề: <span class="hz">${esc(p.z)}</span>${esc(p.v)}<br><small>Đối chiếu: đủ 80 chữ, có mở đầu và kết thúc, dùng các từ gợi ý, kiểm tra thanh điệu/chữ Hán sau khi viết.</small>`});
+  }
+  return null;
+}
+function exBuild(lv){
+  const D=EXD[lv],used=new Set(),short=[];
+  const wordPool=WORDS.filter(w=>w.l===lv&&[...w.h].length<=3&&HAN.test(w.h)).map(w=>({id:'w:'+w.h,w}));
+  const sents=exSents(lv),pairs=exPairs(lv);
+  const cloze=[...FILL,...FILLX,...EXCLOZE].filter(c=>c.l===lv).map(c=>({id:'c:'+c.s,f:c}));
+  const para=EXPARA.map(p=>({id:'p:'+p.b,f:p})),pic=EXPIC.map(p=>({id:'i:'+p.w,f:p})),essay=EXESSAY.map(p=>({id:'e:'+p.z,f:p}));
+  const secs=D.secs.map(sd=>{
+    const qs=[];
+    sd.parts.forEach((pd,pi)=>{
+      let got=0;
+      for(let k=0;k<pd.n;k++){
+        const q=exMakeQ(pd.t,lv,pi+1,{used,sents,pairs,wordPool,cloze,para,pic,essay,pref:pd.pref});
+        if(q){q.id=sd.k+(qs.length+1);qs.push(q);got++}
+      }
+      if(got<pd.n)short.push(`${sd.n}, phần ${pi+1}: ${got}/${pd.n} câu`);
+    });
+    return Object.assign({},sd,{qs});
+  });
+  return{l:lv,secs,short};
+}
+
+/* ---- Âm thanh phần Nghe: phát đúng một lần ---- */
+function exSpeak(q){
+  if(!('speechSynthesis' in window))return false;
+  loadVoices();speechSynthesis.cancel();
+  const v=pickVoice();
+  q.audio.forEach(l=>{const u=new SpeechSynthesisUtterance(l.t);u.lang=v?v.lang:'zh-CN';u.rate=Math.min(1,S.rate||0.8);u.pitch=l.p||1;if(v)u.voice=v;speechSynthesis.speak(u)});
+  return true;
+}
+function exStopAudio(all){try{if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}if(all&&EX&&EX.audioEl){try{EX.audioEl.pause()}catch(e){}}}
+
+/* ---- Chấm điểm ---- */
+function exOk(q,a){
+  if(q.ovr)return true;
+  if(a==null||a==='')return false;
+  if(q.k==='mc'||q.k==='ord')return a===q.ans;
+  if(q.k==='sent')return Array.isArray(a)&&a.length===q.tokens.length&&q.refs.includes(exNorm(a.map(i=>q.tokens[i]).join('')));
+  if(q.k==='hz'){const n=exNorm(a);if(!n)return false;if(n===exNorm(q.ans))return true;return !!(EX.allowPy&&q.py&&checkPy(a,q.py).ok)}
+  if(q.k==='pic')return String(a).includes(q.word)&&hanCount(a)>=(q.minh||6);
+  if(q.k==='essay')return hanCount(a)>=q.min;
+  return false;
+}
+const exDone=q=>{const a=EX.a[q.id];return a!=null&&a!==''&&!(Array.isArray(a)&&!a.length)};
+function exAnsText(q){const a=EX.a[q.id];if(a==null||a===''||(Array.isArray(a)&&!a.length))return '(bỏ trống)';return esc(q.k==='sent'?a.map(i=>q.tokens[i]).join(''):a)}
+function exScore(){const sc={};let ok=0,n=0;EX.secs.forEach(sd=>{let o=0;sd.qs.forEach(q=>{q.ok=exOk(q,exAns(q));if(q.ok)o++});sc[sd.k]=[o,sd.qs.length];ok+=o;n+=sd.qs.length});EX.res={sc,ok,n,pct:n?Math.round(ok/n*100):0}}
+const exAns=q=>EX.a[q.id];
+const exQ=()=>EX.secs[EX.si].qs[EX.qi];
+
+/* ---- Điều khiển ---- */
+function exStop(){clearInterval(EXT);EXT=null;exStopAudio(true);if(EX&&EX.audioUrl){try{URL.revokeObjectURL(EX.audioUrl)}catch(e){}}EX=null;applyPy()}
+function startExamIntro(l){exStopAudio();clearInterval(EXT);EX={l,stage:'intro',allowPy:false};VIEW='exam';markActive();render();window.scrollTo(0,0)}
+function exBegin(){
+  const b=EX.real?exBuildReal(EX.rn):exBuild(EX.l);
+  EX=Object.assign(EX,b,{stage:'ready',si:0,qi:0,a:{},played:{},t0:Date.now(),res:null,conf:false,tok:{}});
+  EX.mp3=!!(EX.real&&REALAUD[EX.rn]);if(EX.mp3)EX.audioUrl=URL.createObjectURL(REALAUD[EX.rn]);
+  if(EX.l>=3)document.body.classList.add('nopy');
+  render();window.scrollTo(0,0);
+}
+function exStartSection(){
+  const sd=EX.secs[EX.si];EX.stage='run';EX.qi=0;EX.conf=false;EX.sStart=Date.now();
+  EX.end=sd.timed?Date.now()+sd.min*60000:0;
+  clearInterval(EXT);
+  EXT=setInterval(()=>{
+    if(!EX||EX.stage!=='run'||!EX.end)return;
+    const r=EX.end-Date.now();
+    if(r<=0){toast('Hết giờ phần '+EX.secs[EX.si].n+'.');exEndSection();return}
+    const e=document.getElementById('extm');if(e){e.textContent=fmt(r);e.classList.toggle('ex-low',r<60000)}
+  },500);
+  if(EX.real&&EX.mp3&&sd.k==='L')exPlayReal();
+  render();window.scrollTo(0,0);
+}
+function exPlayReal(){
+  const a=new Audio(EX.audioUrl);EX.audioEl=a;EX.aend=false;EX.needplay=false;
+  a.addEventListener('ended',()=>{if(!EX||EX.audioEl!==a)return;EX.aend=true;EX.end=Date.now()+5*60000;render()});
+  a.addEventListener('timeupdate',()=>{const e=document.getElementById('exau');if(e&&isFinite(a.duration))e.textContent=fmt((a.duration-a.currentTime)*1000)});
+  a.addEventListener('error',()=>{if(!EX||EX.audioEl!==a)return;EX.mp3=false;EX.audioEl=null;toast('Không phát được file MP3 này. Chuyển sang giọng máy đọc lời thoại.');render()});
+  const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(EX&&EX.audioEl===a&&!(a.error)){EX.needplay=true;render()}});
+}
+function exEndSection(){
+  clearInterval(EXT);EXT=null;exStopAudio(true);
+  const sd=EX.secs[EX.si];sd.used=Date.now()-EX.sStart;
+  if(EX.si<EX.secs.length-1){EX.si++;EX.stage='between'}else exFinish();
+  render();window.scrollTo(0,0);
+}
+function exFinish(){
+  EX.stage='result';applyPy();
+  exScore();
+  /* ghi lịch sử, sổ lỗi sai, tiến độ */
+  S.exams=(S.exams||[]).concat([Object.assign({l:EX.l,t:Date.now(),sc:EX.res.sc,ok:EX.res.ok,n:EX.res.n},EX.real?{real:EX.rn}:{})]).slice(-60);
+  if(!EX.real&&EX.res.pct>=80)S.passed[EX.l]=true;
+  EX.secs.forEach(sd=>sd.qs.forEach(q=>{
+    const tt=tl();tt.q++;if(q.ok)tt.ok++;
+    if(!q.ok&&q.k==='mc'&&exAns(q)!=null){
+      const e=q.err||{};
+      addErr({kind:'mc',type:q.sec==='L'?'Nghe hiểu':TYPE_R,key:(EX.real?'rx'+EX.rn+':':'ex:')+q.pt,pt:q.pt,hzopt:q.hz?1:0,speak:e.speak,prompt:e.prompt||esc(q.pt),opts:q.opts.slice(),ans:q.ans,exp:q.exp,retry:false},exAns(q));
+    }
+  }));
+  save();
+}
+function exAct(a,d){
+  if(!EX)return;
+  const q=EX.stage==='run'?exQ():null;
+  switch(a){
+    case 'begin':exBegin();break;
+    case 'secgo':exStartSection();break;
+    case 'pyallow':break;
+    case 'play':if(q&&!EX.played[q.id]){EX.played[q.id]=true;if(!exSpeak(q))toast('Trình duyệt này chưa hỗ trợ đọc tiếng Trung.');render()}break;
+    case 'pick':if(q){EX.a[q.id]=q.opts[+d.i];render()}break;
+    case 'next':exStopAudio();EX.conf=false;if(EX.qi<EX.secs[EX.si].qs.length-1){EX.qi++;render();window.scrollTo(0,0)}break;
+    case 'prev':exStopAudio();EX.conf=false;if(EX.qi>0){EX.qi--;render()}break;
+    case 'goto':exStopAudio();EX.conf=false;EX.qi=+d.i;render();break;
+    case 'submit':if(!EX.conf){EX.conf=true;render()}else exEndSection();break;
+    case 'cancelconf':EX.conf=false;render();break;
+    case 'quit':if(!EX.quit){EX.quit=true;render()}else{EX.forceLeave=true;go('map')}break;
+    case 'again':if(EX.real){const n=EX.rn;exStopAudio(true);if(EX.audioUrl){try{URL.revokeObjectURL(EX.audioUrl)}catch(e){}}clearInterval(EXT);EX={l:4,stage:'intro',allowPy:false,real:true,rn:n};render();window.scrollTo(0,0)}else startExamIntro(EX.l);break;
+    case 'realback':exStop();go('real');break;
+    case 'ordp':if(q&&q.k==='ord'){const cur=EX.a[q.id]||'';if(cur.length<3&&!cur.includes(d.c)){EX.a[q.id]=cur+d.c;render()}}break;
+    case 'ordclr':if(q){EX.a[q.id]='';render()}break;
+    case 'tokp':if(q&&q.k==='sent'){const cur=EX.a[q.id]||[];if(!cur.includes(+d.i)){EX.a[q.id]=cur.concat(+d.i);render()}}break;
+    case 'tokx':if(q){EX.a[q.id]=(EX.a[q.id]||[]).filter(i=>i!==+d.i);render()}break;
+    case 'tokclr':if(q){EX.a[q.id]=[];render()}break;
+    case 'replay':if(EX.audioEl){EX.audioEl.play();EX.needplay=false;render()}break;
+    case 'ovr':{const q2=EX.secs.flatMap(z=>z.qs).find(x=>x.id===d.id);if(q2){q2.ovr=!q2.ovr;exScore();const h=(S.exams||[])[S.exams.length-1];if(h&&EX.real&&h.real===EX.rn){h.sc=EX.res.sc;h.ok=EX.res.ok}save();render()}break}
+    case 'map':exStop();go('map');break;
+    case 'errors':exStop();go('errors');break;
+    case 'showall':EX.all=!EX.all;render();break;
+  }
+}
+
+/* ---- Giao diện ---- */
+function exSummaryTable(D,lv){
+  return `<table class="ex-tbl"><thead><tr><th>Phần</th><th>Số câu</th><th>Thời gian</th><th>Dạng câu</th></tr></thead><tbody>${D.secs.map(sd=>`<tr><td><b>${sd.n}</b></td><td>${sd.parts.reduce((a,p)=>a+p.n,0)}</td><td>${sd.timed?'~'+sd.min+' phút':'phát 1 lần, ~'+sd.min+' phút'}</td><td>${sd.parts.map((p,i)=>`P${i+1} (${p.n}): ${esc(p.d)}`).join('<br>')}</td></tr>`).join('')}</tbody></table>`;
+}
+function viewExam(){
+  if(!EX)return '<div class="card"><h2>Bài thi đã đóng</h2><button class="btn p" data-act="nav" data-v="map">Về lộ trình</button></div>';
+  const lv=EX.l,D=EXD[lv],total=D.secs.reduce((a,s)=>a+s.parts.reduce((b,p)=>b+p.n,0),0);
+  if(EX.real&&EX.stage==='intro'){loadVoices();return realIntro()}
+  if(EX.stage==='intro'){
+    loadVoices();
+    const hist=(S.exams||[]).filter(x=>x.l===lv&&!x.real).slice(-3).reverse();
+    return `<div class="card"><h2>Thi thử HSK ${lv} theo đề HSK 3.0</h2>
+    <p class="muted">${total} câu · ${D.secs.map(s=>s.n).join(' → ')}. Làm lần lượt từng phần, hết phần không quay lại.</p>
+    ${exSummaryTable(D,lv)}
+    <div class="rule"><b>Quy tắc như phòng thi</b><br>Phần Nghe: mỗi câu chỉ phát một lần, không nghe lại, không quay lại câu trước.${lv>=3?'<br>Pinyin được ẩn trong lúc thi (đề HSK 3 trở lên không có pinyin).':''}<br>Không có đáp án hay giải thích cho đến khi nộp bài.${D.secs.some(s=>s.timed)?'<br>Phần Đọc và Viết có đồng hồ, hết giờ tự nộp phần đó.':''}</div>
+    ${VOICES.length?'':'<div class="gnote" style="margin-top:10px"><b>Máy chưa có giọng tiếng Trung.</b> Phần Nghe sẽ hiện lời thoại để bạn đọc thay vì nghe. Hãy thêm giọng Phổ thông (xem tab Luyện tập, mục Giọng đọc) rồi thi lại để có bài Nghe thật.</div>'}
+    ${D.secs.some(s=>s.k==='W')?`<label style="font-weight:400"><input type="checkbox" id="exallowpy"> Tôi chưa có bộ gõ chữ Hán: cho phép gõ pinyin thay chữ Hán ở các câu viết chữ</label>`:''}
+    <p class="muted"><small>Số câu, số phần và thời gian theo đề mẫu HSK 3.0 (đề cương công bố 11/2025). Dạng câu trong từng phần là mô phỏng nên có thể khác chi tiết so với đề thật. Mình chưa xác nhận được thang điểm chính thức của HSK 3.0, nên app chỉ cho số câu đúng và phần trăm.</small></p>
+    ${hist.length?`<p class="muted"><small>Các lần thi gần nhất: ${hist.map(h=>`${h.ok}/${h.n} (${Math.round(h.ok/h.n*100)}%)`).join(' · ')}</small></p>`:''}
+    <div class="row2"><button class="btn p big" data-ex="begin">Bắt đầu thi</button><button class="btn" data-ex="map">Về lộ trình</button></div></div>`;
+  }
+  if(EX.stage==='ready'||EX.stage==='between'){
+    const sd=EX.secs[EX.si],first=EX.stage==='ready';
+    const prev=first?'':EX.secs[EX.si-1];
+    return `<div class="card"><h2>${first?'Sẵn sàng?':'Hết phần '+esc(prev.n)}</h2>
+    <p>${first?'Phần đầu tiên':'Tiếp theo'}: <b>${esc(sd.n)}</b> · ${sd.qs.length} câu${sd.timed?' · '+sd.min+' phút (đồng hồ chạy khi bạn bấm Bắt đầu)':(EX.real&&EX.mp3?' · phát liền một mạch từ file MP3 ngay khi bạn bấm Bắt đầu':' · mỗi câu chỉ phát một lần')}.</p>
+    <ul class="muted">${sd.parts.map((p,i)=>`<li>Phần ${i+1} (${p.n} câu): ${esc(p.d)}</li>`).join('')}</ul>
+    ${sd.k==='W'?'<p class="muted">Gõ chữ Hán bằng bộ gõ tiếng Trung của máy. Nếu bạn đã bật cho phép gõ pinyin ở màn hình đầu, có thể gõ pinyin thay chữ Hán.</p>':''}
+    ${sd.k==='L'&&!VOICES.length?'<div class="gnote">Máy chưa có giọng tiếng Trung nên lời thoại sẽ được hiển thị bằng chữ.</div>':''}
+    <div class="row2"><button class="btn p big" data-ex="secgo">Bắt đầu phần ${esc(sd.n)}</button><button class="btn" data-ex="quit">${EX.quit?'Bấm lần nữa để bỏ bài thi':'Thoát bài thi'}</button></div></div>`;
+  }
+  if(EX.stage==='run')return exRun();
+  return exResult();
+}
+function exRun(){
+  const sd=EX.secs[EX.si],q=exQ(),n=sd.qs.length,answered=sd.qs.filter(exDone).length;
+  const part=sd.parts[q.part-1];
+  let h=`<div class="qwrap"><div class="qh"><div><b>HSK ${EX.l} · ${esc(sd.n)}</b> <small>· Phần ${q.part} · Câu ${q.no||EX.qi+1}${q.no?'':'/'+n}</small></div>${sd.timed?`<span class="tm" id="extm">${fmt(Math.max(0,EX.end-Date.now()))}</span>`:(EX.real&&EX.mp3?'<small class="muted">Nghe liền mạch</small>':'<small class="muted">Nghe 1 lần</small>')}</div>
+  <div class="bar" style="margin:0 0 8px"><i style="width:${(EX.qi+1)/n*100}%"></i></div><p class="muted" style="margin:0 0 8px"><small>${esc(part?part.d:'')}</small></p><div class="card q">`;
+  if(sd.k==='L'&&EX.real&&EX.mp3){h+=exAudioBar()+q.stem}
+  else if(sd.k==='L'&&q.audio){
+    const done=EX.played[q.id],novoice=!VOICES.length;
+    h+=`<div class="row2"><button class="btn ${done?'':'p'}" data-ex="play" ${done||novoice?'disabled':''}>${ICON} ${done?'Đã phát (không nghe lại được)':novoice?'Không có giọng tiếng Trung':'Phát (chỉ một lần)'}</button></div>`;
+    if(novoice){
+      const tr=q.audio.filter(l=>!l.q);
+      h+=`<div class="ctx0" style="margin-top:8px">${tr.map(l=>`<p class="hz" style="font-size:20px;margin:4px 0">${l.sp?esc(l.sp)+'：':''}${esc(l.t)}</p>`).join('')}</div>${q.qz?`<p class="hz" style="font-size:20px">${esc(q.qz)}</p><small>${esc(q.qv||'')}</small>`:''}`;
+    }else if(q.ty==='ltext')h+=`<p class="muted" style="margin:8px 0 0"><small>Câu hỏi sẽ được đọc sau đoạn nghe. Chọn đáp án bên dưới.</small></p>`;
+    h+=q.stem||'';
+  }else h+=q.stem;
+  if(q.k==='mc')h+='<div class="opts">'+q.opts.map((o,i)=>`<button class="opt${q.hz?' hzopt':''}${q.letters?' ltr':''}${exAns(q)===o?' sel':''}" data-ex="pick" data-i="${i}">${q.letters?`<b class="ex-let">${LET[i]}</b>`:''}${optHTML(o)}</button>`).join('')+'</div>';
+  if(q.k==='hz')h+=`<div class="row2"><input id="exin" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${EX.allowPy?'Gõ chữ Hán (hoặc pinyin)':'Gõ chữ Hán'}" value="${esc(exAns(q)||'')}"></div>`;
+  if(q.k==='pic'||q.k==='essay')h+=`<textarea id="exin" rows="${q.k==='essay'?8:3}" spellcheck="false" placeholder="Viết bằng chữ Hán">${esc(exAns(q)||'')}</textarea><p class="muted"><small id="exct">Số chữ Hán: ${hanCount(exAns(q)||'')}${q.k==='essay'?' / '+q.min:''}</small></p>`;
+  if(q.k==='ord'){const cur=EX.a[q.id]||'';
+    h+=`<div class="ex-seq" aria-live="polite">Thứ tự bạn chọn: <b>${cur?[...cur].join(' → '):'chưa chọn'}</b></div><div class="row2">${['A','B','C'].map(c=>`<button class="btn ${cur.includes(c)?'':'p'}" data-ex="ordp" data-c="${c}" ${cur.includes(c)?'disabled':''}>${c}</button>`).join('')}<button class="btn" data-ex="ordclr">Xóa</button></div>`}
+  if(q.k==='sent'){const cur=EX.a[q.id]||[];
+    h+=`<div class="slot">${cur.map(i=>`<button class="tok" data-ex="tokx" data-i="${i}">${esc(q.tokens[i])}</button>`).join('')}</div><div class="bank">${q.tokens.map((t,i)=>cur.includes(i)?'':`<button class="tok" data-ex="tokp" data-i="${i}">${esc(t)}</button>`).join('')}</div><div class="row2"><button class="btn" data-ex="tokclr">Xóa</button></div>`}
+  h+='</div>';
+  /* điều hướng */
+  const free=sd.k!=='L'||(EX.real&&EX.mp3);
+  h+=`<div class="row2">${free?`<button class="btn" data-ex="prev" ${EX.qi?'':'disabled'}>Câu trước</button>`:''}<button class="btn" data-ex="next" ${EX.qi<n-1?'':'disabled'}>${free?'Câu sau':'Câu tiếp theo'}</button>
+  ${EX.conf?`<span class="gnote">Nộp phần ${esc(sd.n)}? Còn ${n-answered} câu chưa trả lời. <button class="btn p" data-ex="submit">Nộp</button> <button class="btn" data-ex="cancelconf">Làm tiếp</button></span>`:`<button class="btn ${EX.qi===n-1?'p':''}" data-ex="submit">${EX.qi===n-1?'Nộp phần '+esc(sd.n):'Nộp sớm'}</button>`}</div>`;
+  if(free)h+=`<div class="ex-pal" aria-label="Danh sách câu">${sd.qs.map((x,i)=>`<button class="${exDone(x)?'done':''}${i===EX.qi?' cur':''}" data-ex="goto" data-i="${i}" aria-label="Câu ${x.no||i+1}">${x.no||i+1}</button>`).join('')}</div>`;
+  h+=`<div class="row2"><button class="btn" data-ex="quit">${EX.quit?'Bấm lần nữa để bỏ bài thi (không lưu kết quả)':'Thoát bài thi'}</button></div></div>`;
+  return h;
+}
+function exAudioBar(){
+  if(EX.aend)return `<div class="ex-aud">Âm thanh đã kết thúc. Bạn còn <b id="extm">${fmt(Math.max(0,EX.end-Date.now()))}</b> để kiểm tra và điền đáp án.</div>`;
+  return `<div class="ex-aud">${ICON} Đang phát đề nghe · còn <b id="exau">--:--</b> ${EX.needplay?'<button class="btn p" data-ex="replay">Bấm để phát</button>':''}<small class="muted"> Không tua lại được. Bạn có thể trả lời bất kỳ câu nào trong lúc nghe.</small></div>`;
+}
+function exResult(){
+  const r=EX.res,lv=EX.l;
+  const est=sd=>{const [o,n]=r.sc[sd.k];return n?Math.round(o/n*100):0};
+  const secRows=EX.secs.map(sd=>{const [o,n]=r.sc[sd.k];return `<tr><td><b>${esc(sd.n)}</b></td><td>${o}/${n}</td><td>${EX.real?est(sd)+'/100':(n?Math.round(o/n*100):0)+'%'}</td><td>${sd.used?Math.round(sd.used/60000)+' phút':'-'}</td></tr>`}).join('');
+  const tot=EX.secs.reduce((a,sd)=>a+est(sd),0);
+  const wrong=EX.secs.flatMap(sd=>sd.qs.filter(q=>!q.ok)),show=EX.all?EX.secs.flatMap(sd=>sd.qs):wrong;
+  const rv=q=>`<div class="rv ${q.ok?'':'bad'}"><b>${q.no?'Câu '+q.no:esc(q.id)} · ${esc(q.pt)}</b>
+   ${q.tx?`<details class="ctx"><summary>Xem lời thoại</summary>${exLinesHTML(q.tx.lines,true)}</details>`:''}
+   <div>Bạn trả lời: ${exAnsText(q)}</div>${q.ok?'':`<div>Đáp án: ${q.k==='mc'||q.k==='hz'||q.k==='ord'?hzp(q.ans):'xem câu mẫu bên dưới'}</div>`}<div class="ex">${q.exp}</div>${EX.real&&q.sec==='W'?`<button class="btn" data-ex="ovr" data-id="${q.id}">${q.ovr?'Bỏ “Tính là đúng”':'Tính là đúng'}</button>`:''}</div>`;
+  return `<div class="card"><h2>Kết quả HSK ${lv}${EX.real?' · Đề số '+EX.rn:''}: ${r.ok}/${r.n} (${r.pct}%)</h2>
+  ${EX.real?`<p>${tot>=180?'<span class="chip ok">Ước tính '+tot+'/300, đạt (từ 180)</span>':'<span class="chip bad">Ước tính '+tot+'/300, chưa đạt (cần 180)</span>'}</p>`:''}<p style="${EX.real?'display:none':''}">${r.pct>=80?'<span class="chip ok">Đạt ngưỡng 80% của app, chặng HSK '+lv+' được ghi nhận</span>':'<span class="chip bad">Chưa đạt ngưỡng 80% của app</span>'}</p>
+  <table class="ex-tbl"><thead><tr><th>Phần</th><th>Đúng</th><th>${EX.real?'Điểm ước tính':'%'}</th><th>Thời gian</th></tr></thead><tbody>${secRows}</tbody></table>
+  <p class="muted"><small>Ngưỡng 80% là quy tắc riêng của app để mở chặng tiếp theo, không phải điểm đậu của HSK. Các câu viết tự do chỉ được kiểm tra từ bắt buộc và độ dài.${EX.short&&EX.short.length?'<br>Một số phần chưa đủ câu trong ngân hàng: '+esc(EX.short.join('; '))+'.':''}</small></p>
+  <div class="row2"><button class="btn p" data-ex="again">Thi lại (đề mới)</button>${EX.real?'<button class="btn" data-ex="realback">Về danh sách đề</button>':''}<button class="btn" data-ex="map">Về lộ trình</button><button class="btn" data-ex="errors">Sổ lỗi sai</button></div></div>
+  <div class="card"><h2>${EX.all?'Tất cả các câu':'Các câu cần xem lại ('+wrong.length+')'}</h2>
+  <div class="row2"><button class="btn" data-ex="showall">${EX.all?'Chỉ hiện câu sai':'Hiện tất cả câu'}</button></div>
+  ${show.length?show.map(rv).join(''):'<p>Bạn làm đúng toàn bộ. Rất tốt!</p>'}</div>`;
+}
+
+/* ---- Sự kiện ---- */
+document.addEventListener('click',e=>{const el=e.target.closest('[data-ex]');if(!el||!EX)return;exAct(el.dataset.ex,el.dataset)});
+document.addEventListener('change',e=>{if(e.target.id==='exallowpy'&&EX)EX.allowPy=e.target.checked});
+document.addEventListener('input',e=>{
+  if(!EX||EX.stage!=='run'||e.target.id!=='exin')return;
+  const q=exQ();EX.a[q.id]=e.target.value;
+  const c=document.getElementById('exct');if(c)c.textContent='Số chữ Hán: '+hanCount(e.target.value)+(q.k==='essay'?' / '+q.min:'');
+});
+
+function examBlurb(l){const D=EXD[l],n=D.secs.reduce((a,s)=>a+s.parts.reduce((b,p)=>b+p.n,0),0);return n+' câu · '+D.secs.map(s=>s.n).join(' / ')+' · theo đề HSK 3.0'}
+function startTest(l){startExamIntro(l)}
+
+/* ================= Đề thật HSK 4 (bản cũ, 100 câu) ================= */
+const REALAUD={},REALDEF={secs:[
+ {k:'L',n:'Nghe',min:30,timed:false,parts:[{n:10,d:'Phán đoán đúng sai (câu 1–10)'},{n:15,d:'Hội thoại ngắn, chọn đáp án (câu 11–25)'},{n:20,d:'Hội thoại dài và đoạn văn, chọn đáp án (câu 26–45)'}]},
+ {k:'R',n:'Đọc',min:40,timed:true,parts:[{n:10,d:'Chọn từ điền vào chỗ trống (câu 46–55)'},{n:10,d:'Sắp xếp thứ tự các câu (câu 56–65)'},{n:20,d:'Đọc đoạn văn, chọn đáp án (câu 66–85)'}]},
+ {k:'W',n:'Viết',min:25,timed:true,parts:[{n:10,d:'Sắp xếp từ thành câu (câu 86–95)'},{n:5,d:'Nhìn hình, dùng từ cho sẵn để viết câu (câu 96–100)'}]}]};
+const REALN=12,LET='ABCDEF';
+
+function realPickDir(files){
+  let n=0;
+  for(const f of files){
+    if(!/\.mp3$/i.test(f.name))continue;
+    const segs=(f.webkitRelativePath||f.name).normalize('NFC').split('/');segs.pop();
+    let num=0;
+    for(let i=segs.length-1;i>=0;i--){const m=segs[i].match(/(\d+)/);if(m){num=+m[1];break}}
+    if(num>=1&&num<=99){REALAUD[num]=f;n++}
+  }
+  toast(n?`Đã nhận ${n} file MP3.`:'Không thấy file MP3 nào trong thư mục này.');
+  render();
+}
+function viewReal(){
+  const have=Object.keys(REALAUD).length;
+  const cards=Array.from({length:REALN},(_,i)=>i+1).map(n=>{
+    const ok=!!REAL[n],hist=(S.exams||[]).filter(x=>x.real===n).slice(-1)[0];
+    return `<div class="rv" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b>Đề số ${n}</b> ${ok?`<small class="muted">· ${esc(REAL[n].code)}</small>`:'<small class="muted">· chưa nhập nội dung</small>'}<br><small class="muted">${REALAUD[n]?'Có MP3, nghe như đề thật':'Chưa có MP3: nghe bằng giọng máy đọc lời thoại'}${hist?` · Lần gần nhất: ${hist.ok}/${hist.n}`:''}</small></div><button class="btn ${ok?'p':''}" data-rx="start" data-n="${n}" ${ok?'':'disabled'}>Làm đề</button></div>`;
+  }).join('');
+  return `<div class="card"><h2>Đề thi thật HSK 4 (bản cũ, 100 câu)</h2>
+  <p class="muted">Nghe 45 câu (khoảng 30 phút) · Đọc 40 câu (40 phút) · Viết 15 câu (25 phút). Đề do Hán Ban (Hanban) biên soạn, có đáp án.</p>
+  <div class="row2"><label class="btn p" style="cursor:pointer">Chọn thư mục đề (có file MP3)<input type="file" id="realdir" webkitdirectory multiple hidden></label></div>
+  <p class="muted"><small>${have?`Đã nhận MP3 của ${have} đề.`:'Chọn thư mục chứa các thư mục con "Đề số 1" … "Đề số 12". App tự ghép file MP3 theo số đề. Dữ liệu chỉ nằm trên máy bạn; mỗi lần mở lại app cần chọn lại thư mục một lần. Dùng Chrome hoặc Edge.'}</small></p></div>
+  <div class="card"><h2>Danh sách đề</h2>${cards}</div>`;
+}
+function realIntro(){
+  const n=EX.rn,mp3=!!REALAUD[n];
+  return `<div class="card"><h2>Đề thật HSK 4 · Đề số ${n} (${esc(REAL[n].code)})</h2>
+  <p class="muted">100 câu · Nghe → Đọc → Viết. Đúng cấu trúc đề HSK 4 bản cũ.</p>
+  ${exSummaryTable(REALDEF)}
+  <div class="rule"><b>Quy tắc như phòng thi</b><br>${mp3?'Phần Nghe phát liền một mạch từ file MP3, không dừng và không tua lại. Bạn trả lời bất cứ câu nào trong lúc nghe. Khi âm thanh kết thúc có thêm 5 phút điền đáp án.':'Chưa có file MP3 cho đề này, nên phần Nghe dùng giọng máy đọc lời thoại, mỗi câu phát một lần.'}<br>Pinyin được ẩn trong lúc thi.<br>Không có đáp án cho đến khi nộp bài.<br>Phần Đọc và Viết có đồng hồ, hết giờ tự nộp phần đó.</div>
+  ${!mp3&&!VOICES.length?'<div class="gnote" style="margin-top:10px"><b>Máy chưa có giọng tiếng Trung và cũng chưa có MP3.</b> Phần Nghe sẽ hiện lời thoại để bạn đọc.</div>':''}
+  <label style="font-weight:400"><input type="checkbox" id="exallowpy"> Tôi chưa có bộ gõ chữ Hán: cho phép gõ pinyin ở câu 96–100</label>
+  <p class="muted"><small>Điểm hiển thị là ước tính: mỗi phần quy về thang 100, đạt khi tổng từ 180/300. Thang điểm quy đổi thật của Hán Ban không công bố công thức.</small></p>
+  <div class="row2"><button class="btn p big" data-ex="begin">Bắt đầu thi</button><button class="btn" data-ex="realback">Về danh sách đề</button></div></div>`;
+}
+const realLines=(arr)=>arr.map(s=>{const m=s.match(/^(男|女)：(.*)$/);return m?{sp:m[1],t:m[2],p:m[1]==='男'?0.85:1.2}:{sp:'',t:s,p:1}});
+function exBuildReal(n){
+  const R=REAL[n],L=[],Rd=[],W=[];let no=0;
+  const base=(sec,part,o)=>Object.assign({id:'Q'+(++no),no,sec,part},o);
+  /* Nghe 1–10 */
+  R.L1.forEach(x=>L.push(base('L',1,{k:'mc',stem:`<p class="hz" style="font-size:22px">★ ${esc(x.s)}</p>`,opts:['√','×'],ans:x.a?'√':'×',audio:[{t:x.au,p:1}],
+    pt:'Nghe '+no+': '+x.s,tx:{lines:[['',x.au,'','']]},exp:`Lời nghe: <span class="hz">${esc(x.au)}</span><span class="pyk">${esc(PY(x.au))}</span>Câu cần xét: ${esc(x.s)} → <b>${x.a?'√ (đúng)':'× (sai)'}</b>`,
+    err:{prompt:`<span class="hz" style="font-size:22px">★ ${esc(x.s)}</span><br><small>Chọn √ (đúng) hoặc × (sai).</small>`,speak:x.au}})));
+  const dlg=(part,x)=>{const au=realLines(x.d);au.push({t:'问：'+x.q,p:1,q:1});
+    L.push(base('L',part,{k:'mc',stem:'',opts:x.o.slice(),ans:x.o[x.a],letters:true,hz:true,audio:au,qz:x.q,pt:'Nghe '+no+': '+x.q,tx:{lines:x.d.map(s=>{const m=s.match(/^(男|女)：(.*)$/);return m?[m[1],m[2],'','']:['',s,'','']})},
+      exp:`<b>${esc(x.q)}</b><br>Đáp án: <b>${LET[x.a]} ${esc(x.o[x.a])}</b>`,err:{prompt:`<span class="hz" style="font-size:20px">${esc(x.q)}</span>`,speak:x.d.join('。')}}))};
+  R.L2.forEach(x=>dlg(2,x));R.L3.forEach(x=>dlg(3,x));
+  R.L4.forEach(p=>p.qs.forEach(q=>{const au=[{t:p.t,p:1},{t:'问：'+q.q,p:1,q:1}];
+    L.push(base('L',3,{k:'mc',stem:'',opts:q.o.slice(),ans:q.o[q.a],letters:true,hz:true,audio:au,qz:q.q,pt:'Nghe '+no+': '+q.q,tx:{lines:[['',p.t,'','']]},
+      exp:`<b>${esc(q.q)}</b><br>Đáp án: <b>${LET[q.a]} ${esc(q.o[q.a])}</b>`,err:{prompt:`<span class="hz" style="font-size:20px">${esc(q.q)}</span>`,speak:p.t}}))}));
+  /* Đọc 46–55 */
+  R.R1.forEach(b=>b.items.forEach(it=>{const ans=b.bank[it[1]],filled=it[0].replace('（　）',ans);
+    Rd.push(base('R',1,{k:'mc',stem:`<p class="hz" style="font-size:22px;line-height:1.8">${esc(it[0]).replace(/\n/g,'<br>')}</p>`,opts:b.bank.slice(),ans,letters:true,hz:true,pt:'Điền từ '+no,
+      exp:`<span class="hz">${esc(filled).replace(/\n/g,'<br>')}</span><span class="pyk">${esc(PY(filled))}</span>Đáp án: <b>${LET[it[1]]} ${esc(ans)}</b>`,
+      err:{prompt:`Điền từ vào chỗ trống:<br><span class="hz" style="font-size:22px">${esc(it[0]).replace(/\n/g,'<br>')}</span>`}}))}));
+  /* Đọc 56–65: sắp xếp */
+  R.R2.forEach(x=>{const full=[...x[3]].map(c=>x['ABC'.indexOf(c)]).join('，').replace(/，$/,'');
+    Rd.push(base('R',2,{k:'ord',stem:`<div class="ex-ord">${['A','B','C'].map((c,i)=>`<p class="hz" style="font-size:19px;margin:6px 0"><b>${c}</b>　${esc(x[i])}</p>`).join('')}</div>`,ans:x[3],pt:'Sắp xếp '+no,
+      exp:`Thứ tự đúng: <b>${x[3]}</b><br><span class="hz">${esc(full)}</span><span class="pyk">${esc(PY(full))}</span>`}))});
+  /* Đọc 66–85 */
+  R.R3.forEach(x=>Rd.push(base('R',3,{k:'mc',stem:`<p class="hz" style="font-size:19px;line-height:1.9">${esc(x.t)}</p><p class="hz" style="font-size:20px"><b>★ ${esc(x.q)}</b></p>`,opts:x.o.slice(),ans:x.o[x.a],letters:true,hz:true,pt:'Đọc hiểu '+no+': '+x.q,
+    exp:`Đáp án: <b>${LET[x.a]} ${esc(x.o[x.a])}</b>`,err:{prompt:`<details class="ctx" open><summary>Xem bài đọc</summary><p class="hz">${esc(x.t)}</p></details><span class="hz" style="font-size:20px">★ ${esc(x.q)}</span>`}})));
+  /* Viết 86–95 */
+  R.W1.forEach(x=>{const tk=shuffle(x[0].map((t,i)=>({t,i})));
+    W.push(base('W',1,{k:'sent',tokens:tk.map(o=>o.t),refs:x[1].map(exNorm),ans:x[1][0],pt:'Hoàn thành câu '+no,
+      stem:`<p>Sắp xếp các cụm từ thành một câu hoàn chỉnh.</p>`,
+      exp:`Đáp án tham khảo:<br>${x[1].map(r=>`<span class="hz">${esc(r)}</span><span class="pyk">${esc(PY(r))}</span>`).join('')}<small>Nếu bạn xếp ra một câu khác nhưng đúng ngữ pháp, hãy bấm “Tính là đúng”.</small>`}))});
+  /* Viết 96–100 */
+  R.W2.forEach((x,i)=>W.push(base('W',2,{k:'pic',word:x[0],minh:5,
+    stem:`<div style="text-align:center"><img alt="Hình câu ${no}" src="data:image/jpeg;base64,${R.IMG[i]}" style="max-width:240px;max-height:240px;border-radius:10px"></div><p>Dùng từ <span class="hz" style="font-size:24px">${esc(x[0])}</span> để viết <b>một câu</b> theo hình.</p>`,
+    ans:x[1],pt:'Nhìn hình viết câu '+no+' ('+x[0]+')',exp:`Câu tham khảo: <span class="hz">${esc(x[1])}</span><span class="pyk">${esc(PY(x[1]))}</span><small>App chỉ kiểm tra có dùng từ cho sẵn và đủ độ dài; nếu câu của bạn đúng nghĩa và đúng ngữ pháp, hãy bấm “Tính là đúng”.</small>`})));
+  const qs={L,R:Rd,W};
+  const secs=REALDEF.secs.map(sd=>Object.assign({},sd,{qs:qs[sd.k]}));
+  return{l:4,real:true,rn:n,secs,short:[]};
+}
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-rx]');if(!el)return;
+  if(el.dataset.rx==='start'){const n=+el.dataset.n;if(!REAL[n])return;exStopAudio(true);clearInterval(EXT);EX={l:4,stage:'intro',allowPy:false,real:true,rn:n};VIEW='exam';markActive();render();window.scrollTo(0,0)}
+});
+document.addEventListener('change',e=>{if(e.target.id==='realdir')realPickDir(e.target.files)});
+function realCard(){
+  const n=Object.keys(REAL).length;
+  return `<div class="card"><h2>Đề thi thật HSK 4</h2><p class="muted">Làm đề thật của Hán Ban (100 câu, có MP3 phần Nghe). Hiện có ${n} đề trong app.</p><div class="row2"><button class="btn p" data-act="realx">Mở danh sách đề thật</button></div></div>`;
+}
+
+
 applyPy();render();
 </script>
 </body>
